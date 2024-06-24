@@ -1,0 +1,2 @@
+@eas/=node_modules/@ethereum-attestation-service/eas-contracts/
+@openzeppelin/=node_modules/@openzeppelin
