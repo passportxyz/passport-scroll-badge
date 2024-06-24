@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.21;
+pragma solidity 0.8.19;
 
 import {Attestation} from "@eas/contracts/EAS.sol";
 import {IGitcoinPassportDecoder} from "./IGitcoinPassportDecoder.sol";
@@ -8,13 +8,15 @@ import {IGitcoinPassportDecoder} from "./IGitcoinPassportDecoder.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-import {ScrollBadgeAccessControl} from "scroll-canvas-contracts/src/badge/extensions/ScrollBadgeAccessControl.sol";
-import {ScrollBadge} from "scroll-canvas-contracts/src/badge/ScrollBadge.sol";
-import {Unauthorized} from "scroll-canvas-contracts/src/Errors.sol";
+import {ScrollBadgeAccessControl} from "canvas-contracts/src/badge/extensions/ScrollBadgeAccessControl.sol";
+import {ScrollBadgeSingleton} from "canvas-contracts/src/badge/extensions/ScrollBadgeSingleton.sol";
+import {ScrollBadge} from "canvas-contracts/src/badge/ScrollBadge.sol";
+import {Unauthorized} from "canvas-contracts/src/Errors.sol";
 
 /// @title PassportScoreScrollBadge
 /// @notice A badge that represents the user's passport score level.
 contract PassportScoreScrollBadge is
+  ScrollBadge,
   ScrollBadgeAccessControl,
   ScrollBadgeSingleton
 {
@@ -51,6 +53,7 @@ contract PassportScoreScrollBadge is
   )
     internal
     override(
+      ScrollBadge,
       ScrollBadgeAccessControl,
       ScrollBadgeSingleton
     )
@@ -97,6 +100,8 @@ contract PassportScoreScrollBadge is
   /// @dev Only the badge recipient can upgrade their badge
   /// @dev The new level must be higher than the current level
   function upgrade(bytes32 uid) external {
+    Attestation memory badge = getAndValidateBadge(uid);
+
     if (msg.sender != badge.recipient) {
       revert Unauthorized();
     }
