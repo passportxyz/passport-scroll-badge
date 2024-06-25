@@ -6,7 +6,7 @@ import "../src/PassportScoreScrollBadge.sol";
 
 contract DeployPassportScoreScrollBadge is Script {
     address constant resolver = 0x8b3ad69605E4D10637Bbb8Ae2bdc940Ae001D980;
-    address constant decoder = 0x90E2C4472Df225e8D31f44725B75FFaA244d5D33;
+    address constant decoder = 0x8A5820030188346cC9532a1dD9FD2EF8d8F464de;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
