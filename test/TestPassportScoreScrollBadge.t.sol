@@ -20,10 +20,17 @@ contract TestPassportScoreScrollBadge is Test {
     address constant user = 0x96DB2c6D93A8a12089f7a6EdA5464e967308AdEd;
 
     function setUp() public {
+        passportScoreScrollBadge = new PassportScoreScrollBadge(
+            resolver,
+            mockDecoder
+        );
+
         uint256[] memory levelsThresholds = new uint256[](3);
         levelsThresholds[0] = 20;
         levelsThresholds[1] = 30;
         levelsThresholds[2] = 40;
+
+        passportScoreScrollBadge.setLevelThresholds(levelsThresholds);
 
         string[] memory badgeLevelImageURIs = new string[](4);
         badgeLevelImageURIs[0] = "URIdefault";
@@ -31,12 +38,8 @@ contract TestPassportScoreScrollBadge is Test {
         badgeLevelImageURIs[2] = "URIlevel2";
         badgeLevelImageURIs[3] = "URIlevel3";
 
-        passportScoreScrollBadge = new PassportScoreScrollBadge(
-            resolver,
-            mockDecoder,
-            levelsThresholds,
-            badgeLevelImageURIs
-        );
+        passportScoreScrollBadge.setBadgeLevelImageURIs(badgeLevelImageURIs);
+
 
         eas = EAS(easAddress);
     }
@@ -117,6 +120,33 @@ contract TestPassportScoreScrollBadge is Test {
         assertEq(passportScoreScrollBadge.badgeLevel(uid), 1);
     }
 
+    function test_issueLevel1EdgeCase() public {
+        vm.mockCall(
+            mockDecoder,
+            abi.encodeWithSelector(
+                IGitcoinPassportDecoder.getScore.selector,
+                user
+            ),
+            abi.encode(uint256(20))
+        );
+
+        bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));
+        AttestationRequestData memory attestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: false,
+            refUID: 0,
+            data: data,
+            value: 0
+        });
+        vm.prank(user);
+        bytes32 uid = eas.attest(
+            AttestationRequest({schema: schema, data: attestation})
+        );
+
+        assertEq(passportScoreScrollBadge.badgeLevel(uid), 1);
+    }
+
     function test_RevertIf_scoreTooLow() public {
         vm.mockCall(
             mockDecoder,
@@ -139,5 +169,11 @@ contract TestPassportScoreScrollBadge is Test {
         vm.prank(user);
         vm.expectRevert(Unauthorized.selector);
         eas.attest(AttestationRequest({schema: schema, data: attestation}));
+    }
+
+    function test_RevertIf_nonOwnerTriesToUpdateThresholds() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(user);
+        passportScoreScrollBadge.setLevelThresholds(new uint256[](3));
     }
 }

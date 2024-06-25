@@ -7,6 +7,7 @@ import {IGitcoinPassportDecoder} from "./IGitcoinPassportDecoder.sol";
 
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {ScrollBadgeSelfAttest} from "@canvas/badge/extensions/ScrollBadgeSelfAttest.sol";
 import {ScrollBadgeSingleton} from "@canvas/badge/extensions/ScrollBadgeSingleton.sol";
@@ -18,35 +19,35 @@ import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
 contract PassportScoreScrollBadge is
     ScrollBadge,
     ScrollBadgeSelfAttest,
-    ScrollBadgeSingleton
+    ScrollBadgeSingleton,
+    Ownable
 {
+    /// @dev Unable to upgrade the badge
     error CannotUpgrade();
 
+    /// @dev Emitted when a badge is upgraded
+    /// @param oldLevel The old badge level
+    /// @param newLevel The new badge level
     event Upgrade(uint256 oldLevel, uint256 newLevel);
 
     IGitcoinPassportDecoder public gitcoinPassportDecoder;
 
-    // @dev levelThresholds[0] is the threshold for level 1
+    /// @dev levelThresholds[0] is the threshold for level 1
     uint256[] public levelThresholds;
 
-    // @dev badgeLevelImageURIs[0] is the URI for no score, badgeLevelImageURIs[1] is the URI for level 1, etc.
-    // @dev Therefore this array should have a length of levelThresholds.length + 1
+    /// @dev badgeLevelImageURIs[0] is the URI for no score, badgeLevelImageURIs[1] is the URI for level 1, etc.
+    /// @dev Therefore this array should have a length of levelThresholds.length + 1
     string[] public badgeLevelImageURIs;
 
-    // badge UID => current level
+    /// @dev badge UID => current level
     mapping(bytes32 => uint256) public badgeLevel;
 
-    constructor(
-        address resolver_,
-        address gitcoinPassportDecoder_,
-        uint256[] memory levelsThresholds_,
-        string[] memory badgeLevelImageURIs_
-    ) ScrollBadge(resolver_) {
+    constructor(address resolver_, address gitcoinPassportDecoder_)
+        ScrollBadge(resolver_) Ownable()
+    {
         gitcoinPassportDecoder = IGitcoinPassportDecoder(
             gitcoinPassportDecoder_
         );
-        levelThresholds = levelsThresholds_;
-        badgeLevelImageURIs = badgeLevelImageURIs_;
     }
 
     /// @inheritdoc ScrollBadge
@@ -142,5 +143,27 @@ contract PassportScoreScrollBadge is
             string(
                 abi.encodePacked("data:application/json;base64,", tokenUriJson)
             );
+    }
+
+    // Admin functions
+
+    /// @notice Set the level thresholds
+    /// @param levelsThresholds_ The new level thresholds
+    /// @dev levelThresholds[0] is the threshold for level 1
+    function setLevelThresholds(uint256[] memory levelsThresholds_)
+        external
+        onlyOwner
+    {
+        levelThresholds = levelsThresholds_;
+    }
+
+    /// @notice Set the badge level image URIs
+    /// @param badgeLevelImageURIs_ The new badge level image URIs
+    /// @dev The length of this array should be levelThresholds.length + 1
+    function setBadgeLevelImageURIs(string[] memory badgeLevelImageURIs_)
+        external
+        onlyOwner
+    {
+        badgeLevelImageURIs = badgeLevelImageURIs_;
     }
 }
