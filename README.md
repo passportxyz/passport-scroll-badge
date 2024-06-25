@@ -17,3 +17,9 @@ yarn build
 ```bash
 yarn test
 ```
+
+## Deploy to Scroll Mainnet
+
+```bash
+yarn deploy
+```
