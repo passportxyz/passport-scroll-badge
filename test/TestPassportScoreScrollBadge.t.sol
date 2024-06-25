@@ -1,16 +1,16 @@
 pragma solidity 0.8.19;
 
 import "forge-std/Test.sol";
-import "../src/PassportScoreScrollBadge.sol";
-import "../src/IGitcoinPassportDecoder.sol";
+import "src/PassportScoreScrollBadge.sol";
+import "src/IGitcoinPassportDecoder.sol";
 import {AttestationRequest, AttestationRequestData, EAS} from "@eas/contracts/EAS.sol";
+import {Unauthorized} from "canvas-contracts/src/Errors.sol";
 
 contract TestPassportScoreScrollBadge is Test {
     PassportScoreScrollBadge passportScoreScrollBadge;
     EAS eas;
 
     address constant mockDecoder = 0x1234567890123456789012345678901234567890;
-    address constant mockAttester = 0x1357246801357246801357246801357246801357;
 
     address constant resolver = 0x8b3ad69605E4D10637Bbb8Ae2bdc940Ae001D980;
     address constant easAddress = 0xC47300428b6AD2c7D03BB76D05A176058b47E6B0;
@@ -21,9 +21,9 @@ contract TestPassportScoreScrollBadge is Test {
 
     function setUp() public {
         uint256[] memory levelsThresholds = new uint256[](3);
-        levelsThresholds[0] = 0;
-        levelsThresholds[1] = 20;
-        levelsThresholds[2] = 30;
+        levelsThresholds[0] = 20;
+        levelsThresholds[1] = 30;
+        levelsThresholds[2] = 40;
 
         string[] memory badgeLevelImageURIs = new string[](4);
         badgeLevelImageURIs[0] = "URIdefault";
@@ -37,7 +37,6 @@ contract TestPassportScoreScrollBadge is Test {
             levelsThresholds,
             badgeLevelImageURIs
         );
-        passportScoreScrollBadge.toggleAttester(mockAttester, true);
 
         eas = EAS(easAddress);
     }
@@ -49,7 +48,7 @@ contract TestPassportScoreScrollBadge is Test {
                 IGitcoinPassportDecoder.getScore.selector,
                 user
             ),
-            abi.encode(uint256(25))
+            abi.encode(uint256(35))
         );
 
         bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));
@@ -61,7 +60,7 @@ contract TestPassportScoreScrollBadge is Test {
             data: data,
             value: 0
         });
-        vm.prank(mockAttester);
+        vm.prank(user);
         bytes32 uid = eas.attest(
             AttestationRequest({schema: schema, data: attestation})
         );
@@ -71,7 +70,10 @@ contract TestPassportScoreScrollBadge is Test {
         string memory tokenUriJson = Base64.encode(
             abi.encodePacked(
                 '{"name":"',
-                abi.encode("Passport Score Level #", Strings.toString(uint256(2))),
+                abi.encode(
+                    "Passport Score Level #",
+                    Strings.toString(uint256(2))
+                ),
                 '", "description":"',
                 "Passport Score Badge",
                 ', "image": "',
@@ -95,7 +97,7 @@ contract TestPassportScoreScrollBadge is Test {
                 IGitcoinPassportDecoder.getScore.selector,
                 user
             ),
-            abi.encode(uint256(15))
+            abi.encode(uint256(25))
         );
 
         bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));
@@ -107,7 +109,7 @@ contract TestPassportScoreScrollBadge is Test {
             data: data,
             value: 0
         });
-        vm.prank(mockAttester);
+        vm.prank(user);
         bytes32 uid = eas.attest(
             AttestationRequest({schema: schema, data: attestation})
         );
@@ -115,14 +117,14 @@ contract TestPassportScoreScrollBadge is Test {
         assertEq(passportScoreScrollBadge.badgeLevel(uid), 1);
     }
 
-    function test_issueLevel1_0score() public {
+    function test_RevertIf_scoreTooLow() public {
         vm.mockCall(
             mockDecoder,
             abi.encodeWithSelector(
                 IGitcoinPassportDecoder.getScore.selector,
                 user
             ),
-            abi.encode(uint256(0))
+            abi.encode(uint256(5))
         );
 
         bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));
@@ -134,11 +136,8 @@ contract TestPassportScoreScrollBadge is Test {
             data: data,
             value: 0
         });
-        vm.prank(mockAttester);
-        bytes32 uid = eas.attest(
-            AttestationRequest({schema: schema, data: attestation})
-        );
-
-        assertEq(passportScoreScrollBadge.badgeLevel(uid), 1);
+        vm.prank(user);
+        vm.expectRevert(Unauthorized.selector);
+        eas.attest(AttestationRequest({schema: schema, data: attestation}));
     }
 }

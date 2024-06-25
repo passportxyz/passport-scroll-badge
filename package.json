@@ -6,7 +6,8 @@
   "author": "Passport",
   "license": "MIT",
   "scripts": {
-    "test": "forge test --fork-url https://scroll.drpc.org -vvv"
+    "test": "forge test --fork-url https://scroll.drpc.org -vvv",
+    "build": "forge build"
   },
   "dependencies": {
     "@ethereum-attestation-service/eas-contracts": "1.3.7",

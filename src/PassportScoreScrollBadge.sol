@@ -8,7 +8,7 @@ import {IGitcoinPassportDecoder} from "./IGitcoinPassportDecoder.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-import {ScrollBadgeAccessControl} from "canvas-contracts/src/badge/extensions/ScrollBadgeAccessControl.sol";
+import {ScrollBadgeSelfAttest} from "canvas-contracts/src/badge/extensions/ScrollBadgeSelfAttest.sol";
 import {ScrollBadgeSingleton} from "canvas-contracts/src/badge/extensions/ScrollBadgeSingleton.sol";
 import {ScrollBadge} from "canvas-contracts/src/badge/ScrollBadge.sol";
 import {Unauthorized} from "canvas-contracts/src/Errors.sol";
@@ -17,7 +17,7 @@ import {Unauthorized} from "canvas-contracts/src/Errors.sol";
 /// @notice A badge that represents the user's passport score level.
 contract PassportScoreScrollBadge is
     ScrollBadge,
-    ScrollBadgeAccessControl,
+    ScrollBadgeSelfAttest,
     ScrollBadgeSingleton
 {
     error CannotUpgrade();
@@ -52,11 +52,16 @@ contract PassportScoreScrollBadge is
     /// @inheritdoc ScrollBadge
     function onIssueBadge(Attestation calldata attestation)
         internal
-        override(ScrollBadge, ScrollBadgeAccessControl, ScrollBadgeSingleton)
+        override(ScrollBadge, ScrollBadgeSelfAttest, ScrollBadgeSingleton)
         returns (bool)
     {
         // @dev checkLevel will revert if there is no valid attestation
         uint256 level = checkLevel(attestation.recipient);
+
+        if (level == 0) {
+            revert Unauthorized();
+        }
+
         badgeLevel[attestation.uid] = level;
 
         return super.onIssueBadge(attestation);
@@ -65,7 +70,7 @@ contract PassportScoreScrollBadge is
     /// @inheritdoc ScrollBadge
     function onRevokeBadge(Attestation calldata attestation)
         internal
-        override(ScrollBadge, ScrollBadgeAccessControl, ScrollBadgeSingleton)
+        override(ScrollBadge, ScrollBadgeSelfAttest, ScrollBadgeSingleton)
         returns (bool)
     {
         return super.onRevokeBadge(attestation);
