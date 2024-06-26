@@ -11,7 +11,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {ScrollBadgeSelfAttest} from "@canvas/badge/extensions/ScrollBadgeSelfAttest.sol";
 import {ScrollBadgeSingleton} from "@canvas/badge/extensions/ScrollBadgeSingleton.sol";
-import {Unauthorized} from "@canvas/Errors.sol";
+import {IScrollBadgeUpgradeable} from "@canvas/badge/extensions/IScrollBadgeUpgradeable.sol";
+import {Unauthorized, CannotUpgrade} from "@canvas/Errors.sol";
 import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
 
 /// @title PassportScoreScrollBadge
@@ -20,11 +21,9 @@ contract PassportScoreScrollBadge is
     ScrollBadge,
     ScrollBadgeSelfAttest,
     ScrollBadgeSingleton,
+    IScrollBadgeUpgradeable,
     Ownable
 {
-    /// @dev Unable to upgrade the badge
-    error CannotUpgrade();
-
     /// @dev Emitted when a badge is upgraded
     /// @param oldLevel The old badge level
     /// @param newLevel The new badge level
@@ -91,8 +90,18 @@ contract PassportScoreScrollBadge is
         return level;
     }
 
-    /// @notice Upgrade the badge level of the recipient
-    /// @param uid The badge UID
+    /// @inheritdoc IScrollBadgeUpgradeable
+    function canUpgrade(bytes32 uid) external view returns (bool) {
+        Attestation memory badge = getAndValidateBadge(uid);
+
+        uint256 newLevel = checkLevel(badge.recipient);
+
+        uint256 oldLevel = badgeLevel[uid];
+
+        return newLevel > oldLevel;
+    }
+
+    /// @inheritdoc IScrollBadgeUpgradeable
     /// @dev Only the badge recipient can upgrade their badge
     /// @dev The new level must be higher than the current level
     function upgrade(bytes32 uid) external {
@@ -107,7 +116,7 @@ contract PassportScoreScrollBadge is
         uint256 oldLevel = badgeLevel[uid];
 
         if (newLevel <= oldLevel) {
-            revert CannotUpgrade();
+            revert CannotUpgrade(uid);
         }
 
         badgeLevel[uid] = newLevel;
