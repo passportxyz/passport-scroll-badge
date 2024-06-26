@@ -26,9 +26,9 @@ contract TestPassportScoreScrollBadge is Test {
         );
 
         uint256[] memory levelsThresholds = new uint256[](3);
-        levelsThresholds[0] = 20;
-        levelsThresholds[1] = 30;
-        levelsThresholds[2] = 40;
+        levelsThresholds[0] = 200000;
+        levelsThresholds[1] = 300000;
+        levelsThresholds[2] = 400000;
 
         passportScoreScrollBadge.setLevelThresholds(levelsThresholds);
 
@@ -51,7 +51,7 @@ contract TestPassportScoreScrollBadge is Test {
                 IGitcoinPassportDecoder.getScore.selector,
                 user
             ),
-            abi.encode(uint256(35))
+            abi.encode(uint256(350000))
         );
 
         bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));
@@ -100,7 +100,7 @@ contract TestPassportScoreScrollBadge is Test {
                 IGitcoinPassportDecoder.getScore.selector,
                 user
             ),
-            abi.encode(uint256(25))
+            abi.encode(uint256(250000))
         );
 
         bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));
@@ -127,7 +127,7 @@ contract TestPassportScoreScrollBadge is Test {
                 IGitcoinPassportDecoder.getScore.selector,
                 user
             ),
-            abi.encode(uint256(20))
+            abi.encode(uint256(200000))
         );
 
         bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));
@@ -154,7 +154,7 @@ contract TestPassportScoreScrollBadge is Test {
                 IGitcoinPassportDecoder.getScore.selector,
                 user
             ),
-            abi.encode(uint256(5))
+            abi.encode(uint256(50000))
         );
 
         bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));

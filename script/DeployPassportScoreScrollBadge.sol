@@ -13,11 +13,11 @@ contract DeployPassportScoreScrollBadge is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         uint256[] memory levelsThresholds = new uint256[](5);
-        levelsThresholds[0] = 20;
-        levelsThresholds[1] = 30;
-        levelsThresholds[2] = 40;
-        levelsThresholds[3] = 50;
-        levelsThresholds[4] = 60;
+        levelsThresholds[0] = 200000;
+        levelsThresholds[1] = 300000;
+        levelsThresholds[2] = 400000;
+        levelsThresholds[3] = 500000;
+        levelsThresholds[4] = 600000;
 
         string[] memory badgeLevelImageURIs = new string[](6);
         badgeLevelImageURIs[0] = "https://github.com/gitcoinco/passport/blob/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/60%2B.png";
