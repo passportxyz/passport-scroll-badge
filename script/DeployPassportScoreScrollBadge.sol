@@ -5,8 +5,9 @@ import "forge-std/Script.sol";
 import "../src/PassportScoreScrollBadge.sol";
 
 contract DeployPassportScoreScrollBadge is Script {
-    address constant resolver = 0x8b3ad69605E4D10637Bbb8Ae2bdc940Ae001D980;
-    address constant decoder = 0x8A5820030188346cC9532a1dD9FD2EF8d8F464de;
+    address constant resolver = 0xd2270b3540FD2220Fa1025414e1625af8B0dd8f3;
+    address constant decoder = 0x2443D22Db6d25D141A1138D80724e3Eee54FD4C2;
+    address constant attesterProxy = 0x2d4E236AB6F9a41b6FDb0ce531D1915900eD3417;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -34,6 +35,7 @@ contract DeployPassportScoreScrollBadge is Script {
 
         badge.setLevelThresholds(levelsThresholds);
         badge.setBadgeLevelImageURIs(badgeLevelImageURIs);
+        badge.toggleAttester(attesterProxy, true);
 
         vm.stopBroadcast();
     }

@@ -9,7 +9,7 @@ import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {ScrollBadgeSelfAttest} from "@canvas/badge/extensions/ScrollBadgeSelfAttest.sol";
+import {ScrollBadgeAccessControl} from "@canvas/badge/extensions/ScrollBadgeAccessControl.sol";
 import {ScrollBadgeSingleton} from "@canvas/badge/extensions/ScrollBadgeSingleton.sol";
 import {IScrollBadgeUpgradeable} from "@canvas/badge/extensions/IScrollBadgeUpgradeable.sol";
 import {Unauthorized, CannotUpgrade} from "@canvas/Errors.sol";
@@ -19,10 +19,9 @@ import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
 /// @notice A badge that represents the user's passport score level.
 contract PassportScoreScrollBadge is
     ScrollBadge,
-    ScrollBadgeSelfAttest,
+    ScrollBadgeAccessControl,
     ScrollBadgeSingleton,
-    IScrollBadgeUpgradeable,
-    Ownable
+    IScrollBadgeUpgradeable
 {
     /// @dev Emitted when a badge is upgraded
     /// @param oldLevel The old badge level
@@ -52,7 +51,7 @@ contract PassportScoreScrollBadge is
     /// @inheritdoc ScrollBadge
     function onIssueBadge(Attestation calldata attestation)
         internal
-        override(ScrollBadge, ScrollBadgeSelfAttest, ScrollBadgeSingleton)
+        override(ScrollBadge, ScrollBadgeAccessControl, ScrollBadgeSingleton)
         returns (bool)
     {
         // @dev checkLevel will revert if there is no valid attestation
@@ -70,7 +69,7 @@ contract PassportScoreScrollBadge is
     /// @inheritdoc ScrollBadge
     function onRevokeBadge(Attestation calldata attestation)
         internal
-        override(ScrollBadge, ScrollBadgeSelfAttest, ScrollBadgeSingleton)
+        override(ScrollBadge, ScrollBadgeAccessControl, ScrollBadgeSingleton)
         returns (bool)
     {
         return super.onRevokeBadge(attestation);

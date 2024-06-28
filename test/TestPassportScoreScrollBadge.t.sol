@@ -3,11 +3,15 @@ pragma solidity 0.8.19;
 import "forge-std/Test.sol";
 import "src/PassportScoreScrollBadge.sol";
 import "src/IGitcoinPassportDecoder.sol";
-import {AttestationRequest, AttestationRequestData, EAS} from "@eas/contracts/EAS.sol";
+import "src/AttesterProxy.sol";
+import {DelegatedProxyAttestationRequest} from "@eas/contracts/eip712/proxy/EIP712Proxy.sol";
+import {AttestationRequest, AttestationRequestData, EAS, Signature} from "@eas/contracts/EAS.sol";
 import {Unauthorized} from "canvas-contracts/src/Errors.sol";
+import "forge-std/console.sol";
 
 contract TestPassportScoreScrollBadge is Test {
     PassportScoreScrollBadge passportScoreScrollBadge;
+    AttesterProxy attesterProxy;
     EAS eas;
 
     address constant mockDecoder = 0x1234567890123456789012345678901234567890;
@@ -17,6 +21,8 @@ contract TestPassportScoreScrollBadge is Test {
     bytes32 constant schema =
         0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
 
+    address constant issuer = 0x804233b96cbd6d81efeb6517347177ef7bD488ED;
+
     address constant user = 0x96DB2c6D93A8a12089f7a6EdA5464e967308AdEd;
 
     function setUp() public {
@@ -24,6 +30,8 @@ contract TestPassportScoreScrollBadge is Test {
             resolver,
             mockDecoder
         );
+        IEAS easInterface = IEAS(easAddress);
+        attesterProxy = new AttesterProxy(easInterface);
 
         uint256[] memory levelsThresholds = new uint256[](3);
         levelsThresholds[0] = 200000;
@@ -40,11 +48,12 @@ contract TestPassportScoreScrollBadge is Test {
 
         passportScoreScrollBadge.setBadgeLevelImageURIs(badgeLevelImageURIs);
 
+        passportScoreScrollBadge.toggleAttester(address(attesterProxy), true);
 
         eas = EAS(easAddress);
     }
 
-    function test_issueLevel2() public {
+    function test_issueLevel2_delegatedAttestation() public {
         vm.mockCall(
             mockDecoder,
             abi.encodeWithSelector(
@@ -55,6 +64,7 @@ contract TestPassportScoreScrollBadge is Test {
         );
 
         bytes memory data = abi.encode(passportScoreScrollBadge, bytes("0x"));
+
         AttestationRequestData memory attestation = AttestationRequestData({
             recipient: user,
             expirationTime: 0,
@@ -63,7 +73,17 @@ contract TestPassportScoreScrollBadge is Test {
             data: data,
             value: 0
         });
-        vm.prank(user);
+
+        // We should actually be doing this, but it's taking forever to figure out how to create the signature
+        // DelegatedProxyAttestationRequest memory easRequest = DelegatedProxyAttestationRequest({
+        //     schema: schema,
+        //     data: attestation,
+        //     attester: issuer,
+        //     deadline: block.timestamp + 3000
+        // });
+
+
+        vm.prank(address(attesterProxy));
         bytes32 uid = eas.attest(
             AttestationRequest({schema: schema, data: attestation})
         );
@@ -112,7 +132,7 @@ contract TestPassportScoreScrollBadge is Test {
             data: data,
             value: 0
         });
-        vm.prank(user);
+        vm.prank(address(attesterProxy));
         bytes32 uid = eas.attest(
             AttestationRequest({schema: schema, data: attestation})
         );
@@ -139,7 +159,7 @@ contract TestPassportScoreScrollBadge is Test {
             data: data,
             value: 0
         });
-        vm.prank(user);
+        vm.prank(address(attesterProxy));
         bytes32 uid = eas.attest(
             AttestationRequest({schema: schema, data: attestation})
         );
@@ -166,7 +186,7 @@ contract TestPassportScoreScrollBadge is Test {
             data: data,
             value: 0
         });
-        vm.prank(user);
+        vm.prank(address(attesterProxy));
         vm.expectRevert(Unauthorized.selector);
         eas.attest(AttestationRequest({schema: schema, data: attestation}));
     }
@@ -196,7 +216,7 @@ contract TestPassportScoreScrollBadge is Test {
             data: data,
             value: 0
         });
-        vm.prank(user);
+        vm.prank(address(attesterProxy));
         bytes32 uid = eas.attest(
             AttestationRequest({schema: schema, data: attestation})
         );
