@@ -131,7 +131,7 @@ contract PassportScoreScrollBadge is
     {
         uint256 level = badgeLevel[uid];
         string memory name = string(
-            abi.encode("Passport Score Level #", Strings.toString(level))
+            abi.encodePacked("Passport Score Level #", Strings.toString(level))
         );
         string memory description = "Passport Score Badge";
         string memory image = badgeLevelImageURIs[level];
@@ -141,7 +141,7 @@ contract PassportScoreScrollBadge is
                 name,
                 '", "description":"',
                 description,
-                ', "image": "',
+                '", "image": "',
                 image,
                 '"}'
             )

@@ -82,7 +82,6 @@ contract TestPassportScoreScrollBadge is Test {
         //     deadline: block.timestamp + 3000
         // });
 
-
         vm.prank(address(attesterProxy));
         bytes32 uid = eas.attest(
             AttestationRequest({schema: schema, data: attestation})
@@ -90,26 +89,15 @@ contract TestPassportScoreScrollBadge is Test {
 
         assertEq(passportScoreScrollBadge.badgeLevel(uid), 2);
 
-        string memory tokenUriJson = Base64.encode(
-            abi.encodePacked(
-                '{"name":"',
-                abi.encode(
-                    "Passport Score Level #",
-                    Strings.toString(uint256(2))
-                ),
-                '", "description":"',
-                "Passport Score Badge",
-                ', "image": "',
-                "URIlevel2",
-                '"}'
-            )
-        );
+        string memory uri = passportScoreScrollBadge.badgeTokenURI(uid);
 
         assertEq(
-            passportScoreScrollBadge.badgeTokenURI(uid),
-            string(
-                abi.encodePacked("data:application/json;base64,", tokenUriJson)
-            )
+            uri,
+            string.concat(
+            "data:application/json;base64,",
+                string(Base64.encode(
+                    '{"name":"Passport Score Level #2", "description":"Passport Score Badge", "image": "URIlevel2"}'
+                )))
         );
     }
 
@@ -237,5 +225,4 @@ contract TestPassportScoreScrollBadge is Test {
 
         assertEq(passportScoreScrollBadge.badgeLevel(uid), 2);
     }
-
 }
