@@ -28,7 +28,7 @@ yarn deploy
 
 ### Scroll Mainnet
 
-[PassportScoreBadge - 0x71a848a38ffcca5c7a431f2bb411ab632fa0c456](https://scrollscan.com/address/0x71a848a38ffcca5c7a431f2bb411ab632fa0c456)
+[PassportScoreBadge - 0x669e43298ac71c2a8a4f6d635d3db8197e3b6d3a](https://scrollscan.com/address/0x669e43298ac71c2a8a4f6d635d3db8197e3b6d3a)
 
 [AttesterProxy - 0x39571bbd5a4c5d1a5184004c63f45fe426db85ea](https://scrollscan.com/address/0x39571bbd5a4c5d1a5184004c63f45fe426db85ea)
 

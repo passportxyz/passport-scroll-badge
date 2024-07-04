@@ -37,11 +37,20 @@ contract PassportScoreScrollBadge is
     /// @dev Therefore this array should have a length of levelThresholds.length + 1
     string[] public badgeLevelImageURIs;
 
+    /// @dev badgeLevelNames[0] is the name for no score, badgeLevelNames[1] is the name for level 1, etc.
+    /// @dev Therefore this array should have a length of levelThresholds.length + 1
+    string[] public badgeLevelNames;
+
+    /// @dev badgeLevelDescriptions[0] is the description for no score, badgeLevelDescriptions[1] is the description for level 1, etc.
+    /// @dev Therefore this array should have a length of levelThresholds.length + 1
+    string[] public badgeLevelDescriptions;
+
     /// @dev badge UID => current level
     mapping(bytes32 => uint256) public badgeLevel;
 
     constructor(address resolver_, address gitcoinPassportDecoder_)
-        ScrollBadge(resolver_) Ownable()
+        ScrollBadge(resolver_)
+        Ownable()
     {
         gitcoinPassportDecoder = IGitcoinPassportDecoder(
             gitcoinPassportDecoder_
@@ -130,10 +139,8 @@ contract PassportScoreScrollBadge is
         returns (string memory)
     {
         uint256 level = badgeLevel[uid];
-        string memory name = string(
-            abi.encodePacked("Passport Score Level #", Strings.toString(level))
-        );
-        string memory description = "Passport Score Badge";
+        string memory name = badgeLevelNames[level];
+        string memory description = badgeLevelDescriptions[level];
         string memory image = badgeLevelImageURIs[level];
         string memory tokenUriJson = Base64.encode(
             abi.encodePacked(
@@ -173,5 +180,25 @@ contract PassportScoreScrollBadge is
         onlyOwner
     {
         badgeLevelImageURIs = badgeLevelImageURIs_;
+    }
+
+    /// @notice Set the badge level names
+    /// @param badgeLevelNames_ The new badge level names
+    /// @dev The length of this array should be levelThresholds.length + 1
+    function setBadgeLevelNames(string[] memory badgeLevelNames_)
+        external
+        onlyOwner
+    {
+        badgeLevelNames = badgeLevelNames_;
+    }
+
+    /// @notice Set the badge level descriptions
+    /// @param badgeLevelDescriptions_ The new badge level descriptions
+    /// @dev The length of this array should be levelThresholds.length + 1
+    function setBadgeLevelDescriptions(string[] memory badgeLevelDescriptions_)
+        external
+        onlyOwner
+    {
+        badgeLevelDescriptions = badgeLevelDescriptions_;
     }
 }

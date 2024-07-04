@@ -34,6 +34,22 @@ contract DeployPassportScoreScrollBadge is Script {
         badgeLevelImageURIs[4] = "https://raw.githubusercontent.com/gitcoinco/passport/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/50-59.png";
         badgeLevelImageURIs[5] = "https://raw.githubusercontent.com/gitcoinco/passport/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/60%2B.png";
 
+        string[] memory descriptions = new string[](6);
+        descriptions[0] = "This badge is for Scrollers who have a Passport score above 20, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human!";
+        descriptions[1] = "This badge is for Scrollers who have a Passport score above 20, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
+        descriptions[2] = "This badge is for Scrollers who have a Passport score above 30, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
+        descriptions[3] = "This badge is for Scrollers who have a Passport score above 40, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
+        descriptions[4] = "This badge is for Scrollers who have a Passport score above 50, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
+        descriptions[5] = "This badge is for Scrollers who have a Passport score above 60, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! This is the highest level badge.";
+
+        string[] memory names = new string[](6);
+        names[0] = "Unique Humanity Score";
+        names[1] = "Unique Humanity Score - Level 1";
+        names[2] = "Unique Humanity Score - Level 2";
+        names[3] = "Unique Humanity Score - Level 3";
+        names[4] = "Unique Humanity Score - Level 4";
+        names[5] = "Unique Humanity Score - Level 5";
+
         PassportScoreScrollBadge badge = new PassportScoreScrollBadge(
             resolver,
             decoder
@@ -41,6 +57,8 @@ contract DeployPassportScoreScrollBadge is Script {
 
         badge.setLevelThresholds(levelsThresholds);
         badge.setBadgeLevelImageURIs(badgeLevelImageURIs);
+        badge.setBadgeLevelDescriptions(descriptions);
+        badge.setBadgeLevelNames(names);
         badge.toggleAttester(attesterProxy, true);
 
         vm.stopBroadcast();
