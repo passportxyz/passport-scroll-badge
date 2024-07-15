@@ -6,7 +6,7 @@ import "src/IGitcoinPassportDecoder.sol";
 import "src/AttesterProxy.sol";
 import {DelegatedProxyAttestationRequest} from "@eas/contracts/eip712/proxy/EIP712Proxy.sol";
 import {AttestationRequest, AttestationRequestData, EAS, Signature} from "@eas/contracts/EAS.sol";
-import {Unauthorized} from "canvas-contracts/src/Errors.sol";
+import {Unauthorized} from "@canvas/Errors.sol";
 import "forge-std/console.sol";
 
 contract TestPassportScoreScrollBadge is Test {
