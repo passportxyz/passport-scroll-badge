@@ -4,12 +4,11 @@ out = "out"
 libs = ["lib"]
 
 [rpc_endpoints]
-scroll = "https://scroll.drpc.org"
+scroll = "https://rpc.scroll.io"
 scroll-sepolia = "https://scroll-sepolia.drpc.org"
 
 [etherscan]
-scroll = { key = "${SCROLLSCAN_API_KEY}" }
-scroll-sepolia = { key = "${SCROLLSCAN_API_KEY}" }
+scroll = { key = "${SCROLLSCAN_API_KEY}", url = "https://api.scrollscan.com/api" }
 
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

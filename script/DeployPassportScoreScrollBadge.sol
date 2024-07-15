@@ -6,7 +6,7 @@ import "../src/PassportScoreScrollBadge.sol";
 
 contract DeployPassportScoreScrollBadge is Script {
     // Mainnet
-    address constant resolver = 0x8b3ad69605E4D10637Bbb8Ae2bdc940Ae001D980;
+    address constant resolver = 0x4560FECd62B14A463bE44D40fE5Cfd595eEc0113;
     address constant decoder = 0x8A5820030188346cC9532a1dD9FD2EF8d8F464de;
     address constant attesterProxy = 0x39571bBD5a4c5d1a5184004c63F45FE426dB85Ea;
 
