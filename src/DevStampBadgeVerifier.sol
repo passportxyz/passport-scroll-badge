@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {console2} from "forge-std/console2.sol";
 
-contract DevStampBadgeVerifier is EIP712 {
+contract DevStampBadgeVerifier {
     string public constant SIGNING_DOMAIN = "VerifiableCredential";
     string public constant SIGNATURE_VERSION = "1";
 
@@ -40,7 +40,26 @@ contract DevStampBadgeVerifier is EIP712 {
         string[] documentType;
     }
 
-    constructor() EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {}
+    struct EIP712Domain {
+        string name;
+    }
+
+    bytes32 private constant _EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name)");
+
+    function computeDomainSeparator() public view virtual returns (bytes32) {
+        EIP712Domain memory eip712Domain = EIP712Domain({
+            name: "VerifiableCredential"
+        });
+
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                _EIP712DOMAIN_TYPEHASH,
+                keccak256(bytes(eip712Domain.name))
+            )
+        );
+
+        return domainSeparator;
+    }
 
     function hashStringArray(string[] memory array) internal pure returns (bytes32) {
         bytes32[] memory hashedArray = new bytes32[](array.length);
@@ -52,7 +71,11 @@ contract DevStampBadgeVerifier is EIP712 {
 
     function hashDocument(Document memory document) public view returns (bytes32) {
         console2.log("Hashing document: ", document.credentialSubject.hash);
-        return _hashTypedDataV4(keccak256(abi.encode(
+        bytes32 domainSeperator = computeDomainSeparator();
+        console2.log("Domain separator: ", uint256(domainSeperator));
+
+
+        return ECDSA.toTypedDataHash(domainSeperator, keccak256(abi.encode(
             keccak256("Document(string[] @context,CredentialSubject credentialSubject,string expirationDate,string issuanceDate,string issuer,Proof proof,string[] type)CredentialSubject(@context @context,string hash,string id,string provider)@context(string hash,string provider)Proof(string @context,string created,string proofPurpose,string type,string verificationMethod)"),
             hashStringArray(document.context),
             keccak256(abi.encode(
