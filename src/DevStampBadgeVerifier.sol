@@ -6,13 +6,21 @@ pragma solidity ^0.8.0;
 // import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 // import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 // import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {IEAS, Attestation} from "@eas/contracts/IEAS.sol";
+import {console2} from "forge-std/console2.sol";
+
+struct CredentialSubjectContext {
+    string _hash;
+    string provider;
+}
 
 struct CredentialSubject {
     string _hash;
     string id;
     string provider;
+    CredentialSubjectContext _context;
 }
 
 struct Proof {
@@ -24,7 +32,7 @@ struct Proof {
 }
 
 struct Document {
-    string _context;
+    string[] _context;
     CredentialSubject credentialSubject;
     string expirationDate;
     string issuanceDate;
@@ -33,7 +41,9 @@ struct Document {
     string[] _type;
 }
 
-
+struct EIP712Domain {
+    string name;
+}
 
 /// @title DevStampBadgeVerifier
 /// @notice Verifies EIP712-signed credentials and issues badge attestation(s)
@@ -44,206 +54,148 @@ struct Document {
 //   OwnableUpgradeable,
 //   PausableUpgradeable
 
-contract DevStampBadgeVerifier
-{
+contract DevStampBadgeVerifier {
     // The global EAS contract.
     // IEAS private immutable _eas;
-    mapping(address => uint) public nonces;
+    mapping(address => uint256) public nonces;
     string public name;
 
-    function _getInitializedVersion() public pure returns (string memory) {
-        return "1.0.0";
-    }
+    //     /**
+    //    * @dev Creates a new resolver.
+    //    * @notice Initializer function responsible for setting up the contract's initial state.
+    //    * @param eas The address of the global EAS contract
+    //    */
+    //     function initialize(IEAS eas) public initializer {
+    //         __Ownable_init();
+    //         __Pausable_init();
+    //         // __UUPSUpgradeable_init();
 
-//     /**
-//    * @dev Creates a new resolver.
-//    * @notice Initializer function responsible for setting up the contract's initial state.
-//    * @param eas The address of the global EAS contract
-//    */
-//     function initialize(IEAS eas) public initializer {
-//         __Ownable_init();
-//         __Pausable_init();
-//         // __UUPSUpgradeable_init();
+    //         require(address(eas) != address(0), "Invalid EAS address");
+    //         _eas = eas;
+    // name = "DevStampBadgeVerifier";
+    //     }
 
-//         require(address(eas) != address(0), "Invalid EAS address");
-//         _eas = eas;
-        // name = "DevStampBadgeVerifier";
-//     }
-    constructor() {
-        name = "DevStampBadgeVerifier";
-    }
+    bytes32 private constant _PROOF_TYPE_HASH =
+        keccak256("Proof(string @context,string created,string proofPurpose,string type,string verificationMethod)");
 
-    function computeDomainSeparator() public view virtual returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                    keccak256(bytes(name)),
-                    keccak256("1"),
-                    block.chainid,
-                    address(this)
-                )
-            );
-    }
+    bytes32 private constant _CREDENTIAL_SUBJECT_CONTEXT_TYPEHASH =
+        keccak256("@context(string hash,string provider)");
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) public virtual {
+    bytes32 private constant _DOCUMENT_TYPEHASH = keccak256(
+        "Document(string[] @context,CredentialSubject credentialSubject,string expirationDate,string issuanceDate,string issuer,Proof proof,string[] type)CredentialSubject(@context @context,string hash,string id,string provider)@context(string hash,string provider)Proof(string @context,string created,string proofPurpose,string type,string verificationMethod)"
+    );
 
-        require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
+    bytes32 private constant _CREDENTIAL_SUBJECT_TYPEHASH = keccak256(
+        "CredentialSubject(@context @context,string hash,string id,string provider)@context(string hash,string provider)"
+    );
 
-        // Unchecked because the only math done is incrementing
-        // the owner's nonce which cannot realistically overflow.
-        unchecked {
-            address recoveredAddress = ecrecover(
-                keccak256(
-                    abi.encodePacked(
-                        "\x19\x01",
-                        computeDomainSeparator(),
-                        keccak256(
-                            abi.encode(
-                                keccak256(
-                                    "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
-                                ),
-                                owner,
-                                spender,
-                                value,
-                                nonces[owner]++,
-                                deadline
-                            )
-                        )
-                    )
-                ),
-                v,
-                r,
-                s
-            );
-
-            require(recoveredAddress != address(0) && recoveredAddress == owner, "INVALID_SIGNER");
-        }
-    }
+    bytes32 private constant _EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name)");
 
     
 
+    function _hashArray(string[] memory array) internal pure returns (bytes32 result) {
+        bytes32[] memory hashedArray = new bytes32[](array.length);
+        for (uint i = 0; i < array.length; i++) {
+            hashedArray[i] = keccak256(bytes(array[i]));
+        }
+        return keccak256(abi.encodePacked(hashedArray));
+    }
+
+    function hashCredentialSubjectContext(CredentialSubjectContext memory context) public pure returns (bytes32) {
+        bytes32 result = keccak256(
+            abi.encode(
+                _CREDENTIAL_SUBJECT_CONTEXT_TYPEHASH,
+                keccak256(bytes(context._hash)),
+                keccak256(bytes(context.provider))
+            )
+        );
+        console2.log("hashCredentialSubjectContext result:", uint256(result));
+        return result;
+    }
+
+    function hashCredentialSubject(CredentialSubject memory subject) public pure returns (bytes32) {
+        bytes32 result = keccak256(
+            abi.encode(
+                _CREDENTIAL_SUBJECT_TYPEHASH,
+                hashCredentialSubjectContext(subject._context),
+                keccak256(bytes(subject._hash)),
+                keccak256(bytes(subject.id)),
+                keccak256(bytes(subject.provider))
+            )
+        );
+        console2.log("hashCredentialSubject result:", uint256(result));
+        return result;
+    }
+
+    function hashCredentialProof(Proof memory proof) public pure returns (bytes32) {
+        
+        bytes32 result = keccak256(
+            abi.encode(
+                _PROOF_TYPE_HASH,
+                keccak256(bytes(proof._context)),
+                keccak256(bytes(proof.created)),
+                keccak256(bytes(proof.proofPurpose)),
+                keccak256(bytes(proof._type)),
+                keccak256(bytes(proof.verificationMethod))
+            )
+        );
+        console2.log("hashCredentialProof result:", uint256(result));
+        return result;
+    }
+
+    function hashDocument(Document memory document) public pure returns (bytes32) {
+        return keccak256(abi.encode(
+            _DOCUMENT_TYPEHASH,
+            _hashArray(document._context),
+            hashCredentialSubject(document.credentialSubject),
+            keccak256(bytes(document.expirationDate)),
+            keccak256(bytes(document.issuanceDate)),
+            keccak256(bytes(document.issuer)),
+            hashCredentialProof(document.proof),
+            _hashArray(document._type)
+        ));
+    }
+
+    function computeDomainSeparator() public view virtual returns (bytes32) {
+        EIP712Domain memory eip712Domain = EIP712Domain({
+            name: "VerifiableCredential"
+        });
+
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                _EIP712DOMAIN_TYPEHASH,
+                keccak256(bytes(eip712Domain.name))
+            )
+        );
+
+        return domainSeparator;
+    }
+
+    function verifyCredential(Document calldata document, uint8 v, bytes32 r, bytes32 s) public view {
+        console2.log("Verifying credential for document:");
+        console2.log("Document issuer:", document.issuer);
+        console2.log("Document issuanceDate:", document.issuanceDate);
+        console2.log("Document expirationDate:", document.expirationDate);
+
+        bytes32 domainSeparator = computeDomainSeparator();
+        console2.log("Domain Separator:", uint256(domainSeparator));
+
+        bytes32 documentHash = hashDocument(document);
+        console2.log("Document Hash:", uint256(documentHash));
+
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, documentHash));
+        console2.log("Computed digest:", uint256(digest));
+
+        bytes32 digestECDSA = ECDSA.toTypedDataHash(domainSeparator, documentHash);
+        console2.log("Computed digestECDSA:", uint256(digestECDSA));
+
+        address recoveredAddress = ECDSA.recover(digest, v, r, s);
+        console2.log("Recovered address:", recoveredAddress);
+
+        address issuer = 0xd6f8D6CA86AA01E551a311D670a0d1bD8577E5FB;
+        console2.log("Expected issuer:", issuer);
+
+        require(recoveredAddress != address(0) && recoveredAddress == issuer, "INVALID_SIGNER");
+        console2.log("Credential verification successful");
+    }
 }
-
-// Below is an example of EIP712 signature verification
-// from https://github.com/tim-schultz/passport-vc-verification/tree/main
-
-// pragma solidity >=0.8.4;
-// 
-// import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-// import { VcVerifier } from "./VCVerifier.sol";
-// import { DIDpkhAdapter } from "./DIDpkhAdapter.sol";
-// import { AttestationStation } from "./AttestationStation.sol";
-// 
-// 
-// contract DIDStampVcVerifier is VcVerifier, DIDpkhAdapter {
-//     bytes32 private constant PROOF_TYPE_HASH =
-//         keccak256("Proof(string @context,string created,string proofPurpose,string type,string verificationMethod)");
-// 
-//     bytes32 private constant CREDENTIAL_SUBJECT_TYPEHASH =
-//         keccak256("CredentialSubject(string hash,string id,string provider)");
-// 
-//     bytes32 private constant DOCUMENT_TYPEHASH =
-//         keccak256(
-//             "Document(string @context,CredentialSubject credentialSubject,string expirationDate,string issuanceDate,string issuer,Proof proof,string[] type)CredentialSubject(string hash,string id,string provider)Proof(string @context,string created,string proofPurpose,string type,string verificationMethod)"
-//         );
-// 
-//     address public _verifier;
-//     address public _attestationStation;
-// 
-//     AttestationStation.AttestationData[] public _attestations;
-// 
-//     event Verified(string indexed id, string iamHash, string provider);
-// 
-//     mapping(string => string) public verifiedStamps;
-// 
-//     constructor(string memory domainName, address verifier, address attestationStation) VcVerifier(domainName) {
-//         _verifier = verifier;
-//         _attestationStation = attestationStation;
-//     }
-// 
-//     function hashCredentialSubject(CredentialSubject calldata subject) public pure returns (bytes32) {
-//         return
-//             keccak256(
-//                 abi.encode(
-//                     CREDENTIAL_SUBJECT_TYPEHASH,
-//                     keccak256(bytes(subject._hash)),
-//                     keccak256(bytes(subject.id)),
-//                     keccak256(bytes(subject.provider))
-//                 )
-//             );
-//     }
-// 
-//     function hashCredentialProof(Proof calldata proof) public pure returns (bytes32) {
-//         return
-//             keccak256(
-//                 abi.encode(
-//                     PROOF_TYPE_HASH,
-//                     keccak256(bytes(proof._context)),
-//                     keccak256(bytes(proof.created)),
-//                     keccak256(bytes(proof.proofPurpose)),
-//                     keccak256(bytes(proof._type)),
-//                     keccak256(bytes(proof.verificationMethod))
-//                 )
-//             );
-//     }
-// 
-//     function hashDocument(Document calldata document) public pure returns (bytes32) {
-//         bytes32 credentialSubjectHash = hashCredentialSubject(document.credentialSubject);
-//         bytes32 proofHash = hashCredentialProof(document.proof);
-// 
-//         return
-//             keccak256(
-//                 abi.encode(
-//                     DOCUMENT_TYPEHASH,
-//                     keccak256(bytes(document._context)),
-//                     credentialSubjectHash,
-//                     keccak256(bytes(document.expirationDate)),
-//                     keccak256(bytes(document.issuanceDate)),
-//                     keccak256(bytes(document.issuer)),
-//                     proofHash,
-//                     _hashArray(document._type)
-//                 )
-//             );
-//     }
-// 
-//     function verifyStampVc(Document calldata document, uint8 v, bytes32 r, bytes32 s) public returns (bool) {
-//         bytes32 vcHash = hashDocument(document);
-//         bytes32 digest = ECDSA.toTypedDataHash(DOMAIN_SEPARATOR, vcHash);
-// 
-//         address issuerAddress = DIDpkhAdapter.pseudoResolveDidIssuer(document.issuer);
-// 
-//         address recoveredAddress = ECDSA.recover(digest, v, r, s);
-// 
-//         // Here we could check the issuer's address against an on-chain registry.
-//         // We could provide a verifying contract address when signing the credential which could correspond to this contract
-//         require(recoveredAddress == issuerAddress, "VC verification failed issuer does not match signature");
-// 
-//         verifiedStamps[document.credentialSubject.id] = document.credentialSubject._hash;
-// 
-//         emit Verified(
-//             document.credentialSubject.id,
-//             document.credentialSubject._hash,
-//             document.credentialSubject.provider
-//         );
-// 
-//         AttestationStation attestationStation = AttestationStation(_attestationStation);
-//         AttestationStation.AttestationData memory attestation = AttestationStation.AttestationData(
-//             msg.sender,
-//             "Verified",
-//             "yes"
-//         );
-//         _attestations.push(attestation);
-// 
-//         attestationStation.attest(_attestations);
-//         return true;
-//     }
-// }

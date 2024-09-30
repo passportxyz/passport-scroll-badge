@@ -48,13 +48,8 @@ contract PassportScoreScrollBadge is
     /// @dev badge UID => current level
     mapping(bytes32 => uint256) public badgeLevel;
 
-    constructor(address resolver_, address gitcoinPassportDecoder_)
-        ScrollBadge(resolver_)
-        Ownable()
-    {
-        gitcoinPassportDecoder = IGitcoinPassportDecoder(
-            gitcoinPassportDecoder_
-        );
+    constructor(address resolver_, address gitcoinPassportDecoder_) ScrollBadge(resolver_) Ownable() {
+        gitcoinPassportDecoder = IGitcoinPassportDecoder(gitcoinPassportDecoder_);
     }
 
     /// @inheritdoc ScrollBadge
@@ -132,32 +127,16 @@ contract PassportScoreScrollBadge is
     }
 
     /// @inheritdoc ScrollBadge
-    function badgeTokenURI(bytes32 uid)
-        public
-        view
-        override
-        returns (string memory)
-    {
+    function badgeTokenURI(bytes32 uid) public view override returns (string memory) {
         uint256 level = badgeLevel[uid];
         string memory name = badgeLevelNames[level];
         string memory description = badgeLevelDescriptions[level];
         string memory image = badgeLevelImageURIs[level];
         string memory tokenUriJson = Base64.encode(
-            abi.encodePacked(
-                '{"name":"',
-                name,
-                '", "description":"',
-                description,
-                '", "image": "',
-                image,
-                '"}'
-            )
+            abi.encodePacked('{"name":"', name, '", "description":"', description, '", "image": "', image, '"}')
         );
 
-        return
-            string(
-                abi.encodePacked("data:application/json;base64,", tokenUriJson)
-            );
+        return string(abi.encodePacked("data:application/json;base64,", tokenUriJson));
     }
 
     // Admin functions
@@ -165,40 +144,28 @@ contract PassportScoreScrollBadge is
     /// @notice Set the level thresholds
     /// @param levelsThresholds_ The new level thresholds
     /// @dev levelThresholds[0] is the threshold for level 1
-    function setLevelThresholds(uint256[] memory levelsThresholds_)
-        external
-        onlyOwner
-    {
+    function setLevelThresholds(uint256[] memory levelsThresholds_) external onlyOwner {
         levelThresholds = levelsThresholds_;
     }
 
     /// @notice Set the badge level image URIs
     /// @param badgeLevelImageURIs_ The new badge level image URIs
     /// @dev The length of this array should be levelThresholds.length + 1
-    function setBadgeLevelImageURIs(string[] memory badgeLevelImageURIs_)
-        external
-        onlyOwner
-    {
+    function setBadgeLevelImageURIs(string[] memory badgeLevelImageURIs_) external onlyOwner {
         badgeLevelImageURIs = badgeLevelImageURIs_;
     }
 
     /// @notice Set the badge level names
     /// @param badgeLevelNames_ The new badge level names
     /// @dev The length of this array should be levelThresholds.length + 1
-    function setBadgeLevelNames(string[] memory badgeLevelNames_)
-        external
-        onlyOwner
-    {
+    function setBadgeLevelNames(string[] memory badgeLevelNames_) external onlyOwner {
         badgeLevelNames = badgeLevelNames_;
     }
 
     /// @notice Set the badge level descriptions
     /// @param badgeLevelDescriptions_ The new badge level descriptions
     /// @dev The length of this array should be levelThresholds.length + 1
-    function setBadgeLevelDescriptions(string[] memory badgeLevelDescriptions_)
-        external
-        onlyOwner
-    {
+    function setBadgeLevelDescriptions(string[] memory badgeLevelDescriptions_) external onlyOwner {
         badgeLevelDescriptions = badgeLevelDescriptions_;
     }
 }

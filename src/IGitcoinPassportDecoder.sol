@@ -6,10 +6,10 @@ pragma solidity ^0.8.9;
  */
 
 struct Credential {
-  string provider;
-  bytes32 hash;
-  uint64 time;
-  uint64 expirationTime;
+    string provider;
+    bytes32 hash;
+    uint64 time;
+    uint64 expirationTime;
 }
 
 /**
@@ -17,11 +17,9 @@ struct Credential {
  * @notice Minimal interface for consuming GitcoinPassportDecoder data
  */
 interface IGitcoinPassportDecoder {
-  function getPassport(
-    address user
-  ) external returns (Credential[] memory);
+    function getPassport(address user) external returns (Credential[] memory);
 
-  function getScore(address user) external view returns (uint256);
+    function getScore(address user) external view returns (uint256);
 
-  function isHuman(address user) external view returns (bool);
+    function isHuman(address user) external view returns (bool);
 }

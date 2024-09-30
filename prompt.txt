@@ -1,0 +1,20 @@
+update src/DevStampBadgeVerifier.sol so that it has detailed console log statements. Here is a reference to logging in solidity with forge testing
+
+To use it you need import it:
+import {console} from "forge-std/console.sol";
+You can call console.log with up to 4 parameters in any order of following types:
+uint
+string
+bool
+address
+There’s also the single parameter API for the types above, and additionally bytes, bytes1… up to bytes32:
+console.logInt(int i)
+console.logUint(uint i)
+console.logString(string memory s)
+console.logBool(bool b)
+console.logAddress(address a)
+console.logBytes(bytes memory b)
+console.logBytes1(bytes1 b)
+console.logBytes2(bytes2 b)
+…
+console.logBytes32(bytes32 b)

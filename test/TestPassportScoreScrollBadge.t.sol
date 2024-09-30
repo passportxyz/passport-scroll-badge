@@ -18,18 +18,14 @@ contract TestPassportScoreScrollBadge is Test {
 
     address constant resolver = 0x8b3ad69605E4D10637Bbb8Ae2bdc940Ae001D980;
     address constant easAddress = 0xC47300428b6AD2c7D03BB76D05A176058b47E6B0;
-    bytes32 constant schema =
-        0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
+    bytes32 constant schema = 0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
 
     address constant issuer = 0x804233b96cbd6d81efeb6517347177ef7bD488ED;
 
     address constant user = 0x96DB2c6D93A8a12089f7a6EdA5464e967308AdEd;
 
     function setUp() public {
-        passportScoreScrollBadge = new PassportScoreScrollBadge(
-            resolver,
-            mockDecoder
-        );
+        passportScoreScrollBadge = new PassportScoreScrollBadge(resolver, mockDecoder);
         IEAS easInterface = IEAS(easAddress);
         attesterProxy = new AttesterProxy(easInterface);
 
@@ -45,12 +41,18 @@ contract TestPassportScoreScrollBadge is Test {
         badgeLevelImageURIs[3] = "URIlevel3";
 
         string[] memory descriptions = new string[](6);
-        descriptions[0] = "This badge is for Scrollers who have a Passport score above 20, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human!";
-        descriptions[1] = "This badge is for Scrollers who have a Passport score above 20, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
-        descriptions[2] = "This badge is for Scrollers who have a Passport score above 30, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
-        descriptions[3] = "This badge is for Scrollers who have a Passport score above 40, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
-        descriptions[4] = "This badge is for Scrollers who have a Passport score above 50, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
-        descriptions[5] = "This badge is for Scrollers who have a Passport score above 60, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! This is the highest level badge.";
+        descriptions[0] =
+            "This badge is for Scrollers who have a Passport score above 20, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human!";
+        descriptions[1] =
+            "This badge is for Scrollers who have a Passport score above 20, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
+        descriptions[2] =
+            "This badge is for Scrollers who have a Passport score above 30, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
+        descriptions[3] =
+            "This badge is for Scrollers who have a Passport score above 40, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
+        descriptions[4] =
+            "This badge is for Scrollers who have a Passport score above 50, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! Increase your onchain Humanity Score to upgrade your badge.";
+        descriptions[5] =
+            "This badge is for Scrollers who have a Passport score above 60, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you're a real human! This is the highest level badge.";
 
         string[] memory names = new string[](6);
         names[0] = "Unique Humanity Score";
@@ -73,10 +75,7 @@ contract TestPassportScoreScrollBadge is Test {
     function test_issueLevel2_delegatedAttestation() public {
         vm.mockCall(
             mockDecoder,
-            abi.encodeWithSelector(
-                IGitcoinPassportDecoder.getScore.selector,
-                user
-            ),
+            abi.encodeWithSelector(IGitcoinPassportDecoder.getScore.selector, user),
             abi.encode(uint256(350000))
         );
 
@@ -100,9 +99,7 @@ contract TestPassportScoreScrollBadge is Test {
         // });
 
         vm.prank(address(attesterProxy));
-        bytes32 uid = eas.attest(
-            AttestationRequest({schema: schema, data: attestation})
-        );
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(passportScoreScrollBadge.badgeLevel(uid), 2);
 
@@ -111,20 +108,20 @@ contract TestPassportScoreScrollBadge is Test {
         assertEq(
             uri,
             string.concat(
-            "data:application/json;base64,",
-                string(Base64.encode(
-                    '{"name":"Unique Humanity Score - Level 2", "description":"This badge is for Scrollers who have a Passport score above 30, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you\'re a real human! Increase your onchain Humanity Score to upgrade your badge.", "image": "URIlevel2"}'
-                )))
+                "data:application/json;base64,",
+                string(
+                    Base64.encode(
+                        '{"name":"Unique Humanity Score - Level 2", "description":"This badge is for Scrollers who have a Passport score above 30, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you\'re a real human! Increase your onchain Humanity Score to upgrade your badge.", "image": "URIlevel2"}'
+                    )
+                )
+            )
         );
     }
 
     function test_issueLevel1() public {
         vm.mockCall(
             mockDecoder,
-            abi.encodeWithSelector(
-                IGitcoinPassportDecoder.getScore.selector,
-                user
-            ),
+            abi.encodeWithSelector(IGitcoinPassportDecoder.getScore.selector, user),
             abi.encode(uint256(250000))
         );
 
@@ -138,9 +135,7 @@ contract TestPassportScoreScrollBadge is Test {
             value: 0
         });
         vm.prank(address(attesterProxy));
-        bytes32 uid = eas.attest(
-            AttestationRequest({schema: schema, data: attestation})
-        );
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(passportScoreScrollBadge.badgeLevel(uid), 1);
     }
@@ -148,10 +143,7 @@ contract TestPassportScoreScrollBadge is Test {
     function test_issueLevel1EdgeCase() public {
         vm.mockCall(
             mockDecoder,
-            abi.encodeWithSelector(
-                IGitcoinPassportDecoder.getScore.selector,
-                user
-            ),
+            abi.encodeWithSelector(IGitcoinPassportDecoder.getScore.selector, user),
             abi.encode(uint256(200000))
         );
 
@@ -165,9 +157,7 @@ contract TestPassportScoreScrollBadge is Test {
             value: 0
         });
         vm.prank(address(attesterProxy));
-        bytes32 uid = eas.attest(
-            AttestationRequest({schema: schema, data: attestation})
-        );
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(passportScoreScrollBadge.badgeLevel(uid), 1);
     }
@@ -175,10 +165,7 @@ contract TestPassportScoreScrollBadge is Test {
     function test_RevertIf_scoreTooLow() public {
         vm.mockCall(
             mockDecoder,
-            abi.encodeWithSelector(
-                IGitcoinPassportDecoder.getScore.selector,
-                user
-            ),
+            abi.encodeWithSelector(IGitcoinPassportDecoder.getScore.selector, user),
             abi.encode(uint256(50000))
         );
 
@@ -205,10 +192,7 @@ contract TestPassportScoreScrollBadge is Test {
     function test_upgrade() public {
         vm.mockCall(
             mockDecoder,
-            abi.encodeWithSelector(
-                IGitcoinPassportDecoder.getScore.selector,
-                user
-            ),
+            abi.encodeWithSelector(IGitcoinPassportDecoder.getScore.selector, user),
             abi.encode(uint256(250000))
         );
 
@@ -222,18 +206,13 @@ contract TestPassportScoreScrollBadge is Test {
             value: 0
         });
         vm.prank(address(attesterProxy));
-        bytes32 uid = eas.attest(
-            AttestationRequest({schema: schema, data: attestation})
-        );
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(passportScoreScrollBadge.badgeLevel(uid), 1);
 
         vm.mockCall(
             mockDecoder,
-            abi.encodeWithSelector(
-                IGitcoinPassportDecoder.getScore.selector,
-                user
-            ),
+            abi.encodeWithSelector(IGitcoinPassportDecoder.getScore.selector, user),
             abi.encode(uint256(350000))
         );
 
@@ -250,10 +229,13 @@ contract TestPassportScoreScrollBadge is Test {
         assertEq(
             uri,
             string.concat(
-            "data:application/json;base64,",
-                string(Base64.encode(
-                    '{"name":"Unique Humanity Score", "description":"This badge is for Scrollers who have a Passport score above 20, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you\'re a real human!", "image": "URIdefault"}'
-                )))
+                "data:application/json;base64,",
+                string(
+                    Base64.encode(
+                        '{"name":"Unique Humanity Score", "description":"This badge is for Scrollers who have a Passport score above 20, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you\'re a real human!", "image": "URIdefault"}'
+                    )
+                )
+            )
         );
     }
 }
