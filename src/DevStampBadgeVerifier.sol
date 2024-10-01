@@ -33,12 +33,12 @@ struct Proof {
 
 struct Document {
     string[] _context;
+    string[] _type;
     CredentialSubject credentialSubject;
     string expirationDate;
     string issuanceDate;
     string issuer;
     Proof proof;
-    string[] _type;
 }
 
 struct EIP712Domain {

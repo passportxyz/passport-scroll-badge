@@ -41,16 +41,16 @@ contract DevStampBadgeVerifierTest is Test {
 
         // Initialize CredentialSubject
         CredentialSubject memory subject = CredentialSubject({
-            _hash: "v0.0.0:ymd16bDo5s725oPIBtT4mHgF5W6PJNjasqDJ8r801Jk=",
+            _hash: "v0.0.0:DuIuMoRGzEw9Is5C/uGkKxqzQBR+0BuUtMPsrFEkstc=",
             id: "did:pkh:eip155:1:0x0636F974D29d947d4946b2091d769ec6D2d415DE",
-            provider: "Linkedin",
+            provider: "ETHGasSpent#0.25",
             _context: subjectContext
         });
 
         // Initialize Proof
         Proof memory proofData = Proof({
             _context: "https://w3id.org/security/suites/eip712sig-2021/v1",
-            created: "2024-09-09T19:20:01.906Z",
+            created: "2024-09-27T17:14:37.290Z",
             proofPurpose: "assertionMethod",
             _type: "EthereumEip712Signature2021",
             verificationMethod: "did:ethr:0xd6f8d6ca86aa01e551a311d670a0d1bd8577e5fb#controller"
@@ -64,8 +64,8 @@ contract DevStampBadgeVerifierTest is Test {
         Document memory doc = Document({
             _context: contextArray,
             credentialSubject: subject,
-            expirationDate: "2024-12-08T19:20:01.906Z",
-            issuanceDate: "2024-09-09T19:20:01.906Z",
+            expirationDate: "2024-12-26T17:14:37.283Z",
+            issuanceDate: "2024-09-27T17:14:37.283Z",
             issuer: "did:ethr:0xd6f8d6ca86aa01e551a311d670a0d1bd8577e5fb",
             proof: proofData,
             _type: typeArray
@@ -75,11 +75,10 @@ contract DevStampBadgeVerifierTest is Test {
     }
 
     function testCredentialVerification() public {
-        // unable to parse json
-        // string memory root = vm.projectRoot();
-        // string memory path = string.concat(root, "/test/utils/normalizedCredential.json");
-        // string memory json = vm.readFile(path);
-        // bytes memory data = vm.parseJson(json);
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/test/utils/normalizedCredential.json");
+        string memory json = vm.readFile(path);
+        bytes memory data = vm.parseJson(json);
 
         // Document memory document = abi.decode(data, (Document));
 
@@ -87,9 +86,9 @@ contract DevStampBadgeVerifierTest is Test {
 
         // Generated from ethers.utils.splitSignature("0x7c9dfc005e0800e7745eafdfb5f774654c9b7245658021d546e5871e7d5f05bd6a0342c7b195fa01e907219cfc6aac71ac6c7fc11e614aa327bebd5a323eaca51b")
 
-        uint8 v = 28;
-        bytes32 r = 0x457ef46b3afeb80c756f442a94af37ae212f0a377bce847cdad3d1f0df4d01eb;
-        bytes32 s = 0x421122f559f8bc25e41202d763cd7fdb089e4bdef2e8ce852b4653eff5b65f14;
+        uint8 v = 27;
+        bytes32 r = 0x8994712895556c7916b52ede01f9a1f0b71d73e3dc6cd1318be1a56361a77912;
+        bytes32 s = 0x58352eac95e2507281cdf26ec891690952848b63006c2adeda30c217765f72a9;
 
         verifier.verifyCredential(document, v, r, s);
 
