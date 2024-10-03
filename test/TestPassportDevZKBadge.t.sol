@@ -68,7 +68,7 @@ contract TestPassportDevZKBadge is Test {
         zkBadge.setEASAddress(easAddress);
     }
 
-    function test_issueLevel1_gitcoinAttestation() public {
+function test_issueLevel1_gitcoinAttestation() public {
         uint256 currentLevel = 1;
         bytes memory currentLevelBytes = abi.encode(currentLevel);
         bytes memory data = abi.encode(address(zkBadge), currentLevelBytes);
@@ -88,16 +88,18 @@ contract TestPassportDevZKBadge is Test {
         assertEq(zkBadge.badgeLevel(uid), 1);
 
         string memory uri = zkBadge.badgeTokenURI(uid);
-        console.log(uri, "uri");
 
-        // assertEq(
-        //     uri,
-        //     string.concat(
-        //     "data:application/json;base64,",
-        //         string(Base64.encode(
-        //             '{"name":"Passport ZK Badge - Level 1", "description":""description1", "image": "URIlevel1"}'
-        //         )))
-        // );
+        assertEq(
+            uri,
+            string.concat(
+                "data:application/json;base64,",
+                string(
+                    Base64.encode(
+                        '{"name":"Passport ZK Badge - Level 1", "description":"description1", "image": "URIlevel1"}'
+                    )
+                )
+            )
+        );
     }
 
     function test_upgrade_succeeds() public {
@@ -183,18 +185,18 @@ contract TestPassportDevZKBadge is Test {
         assertEq(zkBadge.badgeLevel(uid), 2);
 
         string memory uri = zkBadge.badgeTokenURI(uid);
-        console.log(uri, "uri");
 
-        // Uncomment and update the following assertion once the exact URI format is confirmed
-        // assertEq(
-        //     uri,
-        //     string.concat(
-        //         "data:application/json;base64,",
-        //         string(Base64.encode(
-        //             '{"name":"Passport ZK Badge - Level 2", "description":"description2", "image": "URIlevel2"}'
-        //         ))
-        //     )
-        // );
+        assertEq(
+            uri,
+            string.concat(
+                "data:application/json;base64,",
+                string(
+                    Base64.encode(
+                        '{"name":"Passport ZK Badge - Level 2", "description":"description2", "image": "URIlevel2"}'
+                    )
+                )
+            )
+        );
     }
 
     function test_issueLevel1EdgeCase() public {
