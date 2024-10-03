@@ -15,6 +15,7 @@ import {IScrollBadgeUpgradeable} from "@canvas/badge/extensions/IScrollBadgeUpgr
 import {ScrollBadgeCustomPayload} from "@canvas/badge/extensions/ScrollBadgeCustomPayload.sol";
 import {Unauthorized, CannotUpgrade} from "@canvas/Errors.sol";
 import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
+import "forge-std/console.sol";
 
 string constant PASSPORT_DEV_ZK_SCROLL_BADGE_SCHEMA = "uint256 firstTxTimestamp";
 
@@ -25,8 +26,6 @@ contract PassportDevZKBadge is ScrollBadge, ScrollBadgeAccessControl, ScrollBadg
     /// @param oldLevel The old badge level
     /// @param newLevel The new badge level
     event Upgrade(uint256 oldLevel, uint256 newLevel);
-
-    IGitcoinPassportDecoder public gitcoinPassportDecoder;
 
     /// @dev levelThresholds[0] is the threshold for level 1
     uint256[] public levelThresholds;
@@ -46,9 +45,7 @@ contract PassportDevZKBadge is ScrollBadge, ScrollBadgeAccessControl, ScrollBadg
     /// @dev badge UID => current level
     mapping(bytes32 => uint256) public badgeLevel;
 
-    constructor(address resolver_, address gitcoinPassportDecoder_) ScrollBadge(resolver_) Ownable() {
-        gitcoinPassportDecoder = IGitcoinPassportDecoder(gitcoinPassportDecoder_);
-    }
+    constructor(address resolver_) ScrollBadge(resolver_) Ownable() {}
 
     function decodePayloadData(bytes memory data) public pure returns (uint256) {
         return abi.decode(data, (uint256));
@@ -85,8 +82,9 @@ contract PassportDevZKBadge is ScrollBadge, ScrollBadgeAccessControl, ScrollBadg
     /// @notice Check the level of the user's badge
     /// @param attestation The attestation to check
     /// @return The level of the user's badge
-    function checkLevel(Attestation memory attestation) public view returns (uint8) {
-        (uint8 level) = abi.decode(attestation.data, (uint8));
+    function checkLevel(Attestation memory attestation) public view returns (uint256) {
+        (uint256 level) = abi.decode(attestation.data, (uint256));
+        
         return level;
     }
 
@@ -126,9 +124,13 @@ contract PassportDevZKBadge is ScrollBadge, ScrollBadgeAccessControl, ScrollBadg
     /// @inheritdoc ScrollBadge
     function badgeTokenURI(bytes32 uid) public view override returns (string memory) {
         uint256 level = badgeLevel[uid];
+        console.log("level", level);
         string memory name = badgeLevelNames[level];
+        console.log("name", name);
         string memory description = badgeLevelDescriptions[level];
+        console.log("description", description);
         string memory image = badgeLevelImageURIs[level];
+        console.log("image", image);
         string memory tokenUriJson = Base64.encode(
             abi.encodePacked('{"name":"', name, '", "description":"', description, '", "image": "', image, '"}')
         );

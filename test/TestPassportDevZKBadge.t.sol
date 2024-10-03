@@ -22,45 +22,34 @@ contract TestPassportDevZKBadge is Test {
     
     bytes32 constant schema = 0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
 
-    address constant user = 0xDbf14bc7111e5F9Ed0423Ef8792258b7EBa8764c;
+    address constant user = 0x5F8eeFb88c2B97ebdC93fabE193fC39Bd9Da2F86;
 
     function setUp() public {
         IEAS easInterface = IEAS(easAddress);
-        zkBadge = new PassportDevZKBadge(resolver, mockDecoder);
-
-        uint256[] memory levelsThresholds = new uint256[](5);
-        levelsThresholds[0] = 200000;
-        levelsThresholds[1] = 300000;
-        levelsThresholds[2] = 400000;
-        levelsThresholds[3] = 500000;
-        levelsThresholds[4] = 600000;
+        zkBadge = new PassportDevZKBadge(resolver);
 
         string[] memory badgeLevelImageURIs = new string[](6);
-        badgeLevelImageURIs[0] = "https://raw.githubusercontent.com/gitcoinco/passport/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/60%2B.png";
-        badgeLevelImageURIs[1] = "https://raw.githubusercontent.com/gitcoinco/passport/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/20-29.png";
-        badgeLevelImageURIs[2] = "https://raw.githubusercontent.com/gitcoinco/passport/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/30-39.png";
-        badgeLevelImageURIs[3] = "https://raw.githubusercontent.com/gitcoinco/passport/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/40-49.png";
-        badgeLevelImageURIs[4] = "https://raw.githubusercontent.com/gitcoinco/passport/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/50-59.png";
-        badgeLevelImageURIs[5] = "https://raw.githubusercontent.com/gitcoinco/passport/93889216df77f83470b948f5c8b3f48c3b0492b4/app/public/scrollBadgeImages/60%2B.png";
+        badgeLevelImageURIs[1] = "URIlevel1";
+        badgeLevelImageURIs[2] = "URIlevel2";
+        badgeLevelImageURIs[3] = "URIlevel3";
+        badgeLevelImageURIs[4] = "URIlevel4";
+        badgeLevelImageURIs[5] = "URIlevel5";
 
         // TBD needs updated
         string[] memory descriptions = new string[](6);
-        descriptions[0] =
-            "This badge is for Devs who have contributed to greater than one open source ZK project. Minting this badge informs everyone in the Scroll ecosystem that you're a ZK dev!";
         descriptions[1] =
-            "This badge is for Devs who have contributed to greater than two open source ZK project. Minting this badge informs everyone in the Scroll ecosystem that you're a ZK dev!";
+            "description1";
         descriptions[2] =
-            "This badge is for Devs who have contributed to greater than three open source ZK project. Minting this badge informs everyone in the Scroll ecosystem that you're a ZK dev!";
+            "description2";
         descriptions[3] =
-            "This badge is for Devs who have contributed to greater than four open source ZK project. Minting this badge informs everyone in the Scroll ecosystem that you're a ZK dev!";
+            "description3";
         descriptions[4] =
-            "This badge is for Devs who have contributed to greater than five open source ZK project. Minting this badge informs everyone in the Scroll ecosystem that you're a ZK dev!";
+            "description4";
         descriptions[5] =
-            "This badge is for Devs who have contributed to greater than six open source ZK project. Minting this badge informs everyone in the Scroll ecosystem that you're a ZK dev!";
-
+            "description5";
+        
         // TBD needs updated
         string[] memory names = new string[](6);
-        names[0] = "Passport ZK Badge - Level 0";
         names[1] = "Passport ZK Badge - Level 1";
         names[2] = "Passport ZK Badge - Level 2";
         names[3] = "Passport ZK Badge - Level 3";
@@ -68,7 +57,6 @@ contract TestPassportDevZKBadge is Test {
         names[5] = "Passport ZK Badge - Level 5";
         
 
-        zkBadge.setLevelThresholds(levelsThresholds);
         zkBadge.setBadgeLevelImageURIs(badgeLevelImageURIs);
         zkBadge.setBadgeLevelDescriptions(descriptions);
         zkBadge.setBadgeLevelNames(names);
@@ -81,16 +69,6 @@ contract TestPassportDevZKBadge is Test {
     }
 
     function test_issueLevel1_gitcoinAttestation() public {
-        // vm.mockCall(
-        //     mockDecoder,
-        //     abi.encodeWithSelector(
-        //         IGitcoinPassportDecoder.getScore.selector,
-        //         user
-        //     ),
-        //     abi.encode(uint256(350000))
-        // );
-
-
         uint256 currentLevel = 1;
         bytes memory currentLevelBytes = abi.encode(currentLevel);
         bytes memory data = abi.encode(address(zkBadge), currentLevelBytes);
@@ -112,15 +90,62 @@ contract TestPassportDevZKBadge is Test {
 
         assertEq(zkBadge.badgeLevel(uid), 1);
 
-        // string memory uri = zkBadge.badgeTokenURI(uid);
+        string memory uri = zkBadge.badgeTokenURI(uid);
+        console.log(uri, "uri");
 
         // assertEq(
         //     uri,
         //     string.concat(
         //     "data:application/json;base64,",
         //         string(Base64.encode(
-        //             '{"name":"Unique Humanity Score - Level 2", "description":"This badge is for Scrollers who have a Passport score above 30, and have minted an onchain attestation to the Scroll network. Minting this badge informs everyone in the Scroll ecosystem that you\'re a real human! Increase your onchain Humanity Score to upgrade your badge.", "image": "URIlevel2"}'
+        //             '{"name":"Passport ZK Badge - Level 1", "description":""description1", "image": "URIlevel1"}'
         //         )))
         // );
+    }
+
+    function test_upgrade() public {
+        uint256 currentLevel = 1;
+        bytes memory currentLevelBytes = abi.encode(currentLevel);
+        bytes memory data = abi.encode(address(zkBadge), currentLevelBytes);
+
+        AttestationRequestData memory attestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: false,
+            refUID: 0,
+            data: data,
+            value: 0
+        });
+
+        vm.prank(gitcoinAttester);
+        bytes32 uid = eas.attest(
+            AttestationRequest({schema: schema, data: attestation})
+        );
+        
+
+        assertEq(zkBadge.badgeLevel(uid), 1);
+
+        uint256 newLevel = 2;
+        bytes memory newLevelBytes = abi.encode(newLevel);
+        bytes memory newData = abi.encode(address(zkBadge), newLevelBytes);
+
+        AttestationRequestData memory newAttestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: false,
+            refUID: uid,
+            data: newData,
+            value: 0
+        });
+
+        vm.prank(gitcoinAttester);
+        bytes32 newUid = eas.attest(
+            AttestationRequest({schema: schema, data: newAttestation})
+        );
+
+        vm.prank(user);
+        zkBadge.upgrade(newUid);
+
+        assertEq(zkBadge.badgeLevel(newUid), 2);
     }
 }
