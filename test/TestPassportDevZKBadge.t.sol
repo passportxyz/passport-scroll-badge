@@ -7,12 +7,14 @@ import "src/AttesterProxy.sol";
 import {AttestationRequest, AttestationRequestData, EAS, Signature} from "@eas/contracts/EAS.sol";
 import {Unauthorized} from "canvas-contracts/src/Errors.sol";
 import "forge-std/console.sol";
+import {SchemaResolver, ISchemaResolver} from "@eas/contracts/resolver/SchemaResolver.sol";
 
 contract TestPassportDevZKBadge is Test {
     PassportDevZKBadge zkBadge;
     AttesterProxy attesterProxy;
-
     EAS eas;
+
+    bytes32 updateSchema;
 
     address constant mockDecoder = 0x1234567890123456789012345678901234567890;
 
@@ -58,6 +60,11 @@ contract TestPassportDevZKBadge is Test {
         zkBadge.toggleAttester(address(gitcoinAttester), true);
 
         eas = EAS(easAddress);
+
+        // Register a schema that will be used for upgrades
+        updateSchema = eas.getSchemaRegistry().register("uint256 updatedScore", ISchemaResolver(address(0)), false);
+
+        zkBadge.setEASAddress(easAddress);
     }
 
     function test_issueLevel1_gitcoinAttestation() public {
@@ -113,7 +120,7 @@ contract TestPassportDevZKBadge is Test {
 
         uint256 newLevel = 2;
         bytes memory newLevelBytes = abi.encode(newLevel);
-        bytes memory newData = abi.encode(address(zkBadge), newLevelBytes);
+        bytes memory newData = abi.encode(newLevelBytes);
 
         AttestationRequestData memory newAttestation = AttestationRequestData({
             recipient: user,
@@ -125,7 +132,7 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
-        bytes32 newUid = eas.attest(AttestationRequest({schema: schema, data: newAttestation}));
+        bytes32 newUid = eas.attest(AttestationRequest({schema: updateSchema, data: newAttestation}));
 
         vm.prank(user);
         zkBadge.upgrade(newUid);

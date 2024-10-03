@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.19;
 
-import {Attestation} from "@eas/contracts/EAS.sol";
+import {Attestation, IEAS} from "@eas/contracts/EAS.sol";
 import {IGitcoinPassportDecoder} from "./IGitcoinPassportDecoder.sol";
 
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
@@ -29,10 +29,19 @@ contract PassportDevZKBadge is
     ScrollBadgeSingleton,
     IScrollBadgeUpgradeable
 {
+    // The instance of the EAS contract.
+    IEAS public eas;
+
     /// @dev Emitted when a badge is upgraded
     /// @param oldLevel The old badge level
     /// @param newLevel The new badge level
     event Upgrade(uint256 oldLevel, uint256 newLevel);
+
+    /// @dev Emitted when the EAS contract address is set
+    event EASSet(address easAddress);
+
+    /// Zero value was passed
+    error ZeroValue();
 
     /// @notice Array of level thresholds for badge levels
     /// @dev levelThresholds[0] is the threshold for level 1
@@ -124,13 +133,19 @@ contract PassportDevZKBadge is
     /// @dev Upgrades a badge to a new level
     /// @param uid The unique identifier of the badge to upgrade
     function upgrade(bytes32 uid) external {
-        Attestation memory badge = getAndValidateBadge(uid);
+        Attestation memory attestation = getAttestation(uid);
 
-        if (msg.sender != badge.recipient) {
+        if (!isAttester[attestation.attester]) {
             revert Unauthorized();
         }
 
-        uint256 newLevel = checkLevel(badge);
+        if (msg.sender != attestation.recipient) {
+            revert Unauthorized();
+        }
+
+        bytes memory decodedLevelBytes = abi.decode(attestation.data, (bytes));
+        uint256 newLevel = abi.decode(decodedLevelBytes, (uint256));
+
         uint256 oldLevel = badgeLevel[uid];
 
         if (newLevel <= oldLevel) {
@@ -159,7 +174,28 @@ contract PassportDevZKBadge is
         return string(abi.encodePacked("data:application/json;base64,", tokenUriJson));
     }
 
+    /**
+     * Return an attestation for a given UID
+     * @param attestationUID The UID of the attestation
+     */
+    function getAttestation(bytes32 attestationUID) public view returns (Attestation memory) {
+        Attestation memory attestation = eas.getAttestation(attestationUID);
+        return attestation;
+    }
+
     // Admin functions
+
+    /**
+     * @dev Sets the address of the EAS contract.
+     * @param _easContractAddress The address of the EAS contract.
+     */
+    function setEASAddress(address _easContractAddress) external onlyOwner {
+        if (_easContractAddress == address(0)) {
+            revert ZeroValue();
+        }
+        eas = IEAS(_easContractAddress);
+        emit EASSet(_easContractAddress);
+    }
 
     /// @notice Set the level thresholds for badge levels
     /// @dev Only the contract owner can call this function
