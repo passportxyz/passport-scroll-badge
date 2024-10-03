@@ -1,0 +1,1 @@
+update the descriptions and names in test/TestPassportDevZKBadge.t.sol so that they match the first entry

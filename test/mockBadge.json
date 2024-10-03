@@ -1,0 +1,27 @@
+{
+  "passport": {
+    "multiAttestationRequest": [
+      {
+        "schema": "0xbed807c107eec2a3b362280daeea502a4623e1e1d87db13d844c0a5deca168ce",
+        "data": [
+          {
+            "recipient": "0xDbf14bc7111e5F9Ed0423Ef8792258b7EBa8764c",
+            "expirationTime": 0,
+            "revocable": true,
+            "refUID": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "value": 0,
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+          }
+        ]
+      }
+    ],
+    "nonce": 0,
+    "fee": "420271808994842"
+  },
+  "signature": {
+    "v": 27,
+    "r": "0xf9e07d250ff90ff0b9d6890790b7e9148c45b5a2cd01fb8ad204beb44dd256de",
+    "s": "0x50cdf75e54094a9ad3ac355ed6e127d9cd09ec1c822573685c413c66c66756dd"
+  },
+  "invalidCredentials": []
+}
