@@ -77,16 +77,45 @@ contract PassportDevZKBadge is
         override(ScrollBadge, ScrollBadgeAccessControl, ScrollBadgeSingleton, ScrollBadgeCustomPayload)
         returns (bool)
     {
-        bytes memory payload = getPayload(attestation);
-        (uint256 level) = decodePayloadData(payload);
+        // Check if the user already has a badge
+        // If so, we proceed with upgrade process
+        // Other option is to create a schema and issue a new attestation for that then check that within upgrade
 
-        if (level == 0) {
-            revert Unauthorized();
+        if (hasBadge(attestation.recipient)) {
+            bytes memory payload = getPayload(attestation);
+            (uint256 newLevel) = decodePayloadData(payload);
+
+            if (newLevel == 0) {
+                revert Unauthorized();
+            }
+
+            bytes32 uid = attestation.uid;
+
+            uint256 oldLevel = badgeLevel[uid];
+
+            if (newLevel <= oldLevel) {
+                revert CannotUpgrade(uid);
+            }
+
+            badgeLevel[uid] = newLevel;
+            emit Upgrade(oldLevel, newLevel);
+
+            // this is slightly misleading since we are not issueing a badge but actually upgrading one.
+            // The boolean return from this function eventually bubbles up to the below function within EAS
+            // https://github.com/ethereum-attestation-service/eas-contracts/blob/558250dae4cb434859b1ac3b6d32833c6448be21/contracts/resolver/SchemaResolver.sol#L139
+            return true;
+        } else {
+            bytes memory payload = getPayload(attestation);
+            (uint256 level) = decodePayloadData(payload);
+
+            if (level == 0) {
+                revert Unauthorized();
+            }
+
+            badgeLevel[attestation.uid] = level;
+
+            return super.onIssueBadge(attestation);
         }
-
-        badgeLevel[attestation.uid] = level;
-
-        return super.onIssueBadge(attestation);
     }
 
     /// @inheritdoc ScrollBadge
