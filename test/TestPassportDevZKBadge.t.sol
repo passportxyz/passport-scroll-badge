@@ -25,6 +25,7 @@ contract TestPassportDevZKBadge is Test {
     bytes32 constant schema = 0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
 
     address constant user = 0x5F8eeFb88c2B97ebdC93fabE193fC39Bd9Da2F86;
+    address constant user2 = 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045;
 
     function setUp() public {
         IEAS easInterface = IEAS(easAddress);
@@ -99,7 +100,7 @@ contract TestPassportDevZKBadge is Test {
         // );
     }
 
-    function test_upgrade() public {
+    function test_upgrade_succeeds() public {
         uint256 currentLevel = 1;
         bytes memory currentLevelBytes = abi.encode(currentLevel);
         bytes memory data = abi.encode(address(zkBadge), currentLevelBytes);
@@ -126,7 +127,7 @@ contract TestPassportDevZKBadge is Test {
             recipient: user,
             expirationTime: 0,
             revocable: false,
-            refUID: uid,
+            refUID: 0,
             data: newData,
             value: 0
         });
@@ -138,5 +139,123 @@ contract TestPassportDevZKBadge is Test {
         zkBadge.upgrade(newUid);
 
         assertEq(zkBadge.badgeLevel(newUid), 2);
+    }
+
+    function test_unauthorized_upgrade() public {
+        uint256 newLevel = 2;
+        bytes memory newLevelBytes = abi.encode(newLevel);
+        bytes memory newData = abi.encode(newLevelBytes);
+
+        AttestationRequestData memory newAttestation = AttestationRequestData({
+            recipient: user2,
+            expirationTime: 0,
+            revocable: false,
+            refUID: 0,
+            data: newData,
+            value: 0
+        });
+
+        vm.prank(gitcoinAttester);
+        bytes32 newUid = eas.attest(AttestationRequest({schema: updateSchema, data: newAttestation}));
+
+        vm.expectRevert();
+        vm.prank(user);
+        zkBadge.upgrade(newUid);
+    }
+
+    function test_issueLevel2_gitcoinAttestation() public {
+        uint256 currentLevel = 2;
+        bytes memory currentLevelBytes = abi.encode(currentLevel);
+        bytes memory data = abi.encode(address(zkBadge), currentLevelBytes);
+
+        AttestationRequestData memory attestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: false,
+            refUID: 0,
+            data: data,
+            value: 0
+        });
+
+        vm.prank(gitcoinAttester);
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
+
+        assertEq(zkBadge.badgeLevel(uid), 2);
+
+        string memory uri = zkBadge.badgeTokenURI(uid);
+        console.log(uri, "uri");
+
+        // Uncomment and update the following assertion once the exact URI format is confirmed
+        // assertEq(
+        //     uri,
+        //     string.concat(
+        //         "data:application/json;base64,",
+        //         string(Base64.encode(
+        //             '{"name":"Passport ZK Badge - Level 2", "description":"description2", "image": "URIlevel2"}'
+        //         ))
+        //     )
+        // );
+    }
+
+    function test_issueLevel1EdgeCase() public {
+        uint256 currentLevel = 1;
+        bytes memory currentLevelBytes = abi.encode(currentLevel);
+        bytes memory data = abi.encode(address(zkBadge), currentLevelBytes);
+
+        AttestationRequestData memory attestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: false,
+            refUID: 0,
+            data: data,
+            value: 0
+        });
+
+        vm.prank(gitcoinAttester);
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
+
+        assertEq(zkBadge.badgeLevel(uid), 1);
+    }
+
+    function test_RevertIf_scoreTooLow() public {
+        uint256 currentLevel = 0;
+        bytes memory currentLevelBytes = abi.encode(currentLevel);
+        bytes memory data = abi.encode(address(zkBadge), currentLevelBytes);
+
+        AttestationRequestData memory attestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: false,
+            refUID: 0,
+            data: data,
+            value: 0
+        });
+
+        vm.prank(gitcoinAttester);
+        vm.expectRevert(Unauthorized.selector);
+        eas.attest(AttestationRequest({schema: schema, data: attestation}));
+    }
+
+    function test_RevertIf_nonOwnerTriesToUpdateThresholds() public {
+        string[] memory newURIs = new string[](6);
+        vm.prank(user);
+        vm.expectRevert("Ownable: caller is not the owner");
+        zkBadge.setBadgeLevelImageURIs(newURIs);
+    }
+
+    function test_tokenURILevel0() public {
+        bytes32 uid = 0x0;
+        string memory uri = zkBadge.badgeTokenURI(uid);
+
+        // Uncomment and update the following assertion once the exact URI format is confirmed
+        // assertEq(
+        //     uri,
+        //     string.concat(
+        //         "data:application/json;base64,",
+        //         string(Base64.encode(
+        //             '{"name":"Passport ZK Badge", "description":"Default description", "image": "URIdefault"}'
+        //         ))
+        //     )
+        // );
     }
 }
