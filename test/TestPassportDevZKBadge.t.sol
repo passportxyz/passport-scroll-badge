@@ -19,7 +19,7 @@ contract TestPassportDevZKBadge is Test {
     address constant resolver = 0x8b3ad69605E4D10637Bbb8Ae2bdc940Ae001D980;
     address constant gitcoinAttester = 0xCc90105D4A2aa067ee768120AdA19886021dF422;
     address constant easAddress = 0xC47300428b6AD2c7D03BB76D05A176058b47E6B0;
-    
+
     bytes32 constant schema = 0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
 
     address constant user = 0x5F8eeFb88c2B97ebdC93fabE193fC39Bd9Da2F86;
@@ -37,17 +37,12 @@ contract TestPassportDevZKBadge is Test {
 
         // TBD needs updated
         string[] memory descriptions = new string[](6);
-        descriptions[1] =
-            "description1";
-        descriptions[2] =
-            "description2";
-        descriptions[3] =
-            "description3";
-        descriptions[4] =
-            "description4";
-        descriptions[5] =
-            "description5";
-        
+        descriptions[1] = "description1";
+        descriptions[2] = "description2";
+        descriptions[3] = "description3";
+        descriptions[4] = "description4";
+        descriptions[5] = "description5";
+
         // TBD needs updated
         string[] memory names = new string[](6);
         names[1] = "Passport ZK Badge - Level 1";
@@ -55,16 +50,13 @@ contract TestPassportDevZKBadge is Test {
         names[3] = "Passport ZK Badge - Level 3";
         names[4] = "Passport ZK Badge - Level 4";
         names[5] = "Passport ZK Badge - Level 5";
-        
 
         zkBadge.setBadgeLevelImageURIs(badgeLevelImageURIs);
         zkBadge.setBadgeLevelDescriptions(descriptions);
         zkBadge.setBadgeLevelNames(names);
 
-
         zkBadge.toggleAttester(address(gitcoinAttester), true);
 
-        
         eas = EAS(easAddress);
     }
 
@@ -83,10 +75,7 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
-        bytes32 uid = eas.attest(
-            AttestationRequest({schema: schema, data: attestation})
-        );
-        
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(zkBadge.badgeLevel(uid), 1);
 
@@ -118,10 +107,7 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
-        bytes32 uid = eas.attest(
-            AttestationRequest({schema: schema, data: attestation})
-        );
-        
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(zkBadge.badgeLevel(uid), 1);
 
@@ -139,9 +125,7 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
-        bytes32 newUid = eas.attest(
-            AttestationRequest({schema: schema, data: newAttestation})
-        );
+        bytes32 newUid = eas.attest(AttestationRequest({schema: schema, data: newAttestation}));
 
         vm.prank(user);
         zkBadge.upgrade(newUid);
