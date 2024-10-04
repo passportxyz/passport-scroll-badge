@@ -17,7 +17,7 @@ import {Unauthorized, CannotUpgrade} from "@canvas/Errors.sol";
 import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
 import "forge-std/console.sol";
 
-string constant PASSPORT_DEV_ZK_SCROLL_BADGE_SCHEMA = "uint256 firstTxTimestamp";
+string constant PASSPORT_DEV_ZK_SCROLL_BADGE_SCHEMA = "uint256 level, bytes32 providerHash";
 
 /// @title PassportDevZKBadge
 /// @notice A badge contract representing the user's passport score level on the Scroll network
@@ -43,6 +43,9 @@ contract PassportDevZKBadge is
     /// Zero value was passed
     error ZeroValue();
 
+    /// Hash was already used
+    error HashUsed();
+
     /// @notice Array of level thresholds for badge levels
     /// @dev levelThresholds[0] is the threshold for level 1
     uint256[] public levelThresholds;
@@ -66,6 +69,10 @@ contract PassportDevZKBadge is
     /// @dev badge UID => current level
     mapping(bytes32 => uint256) public badgeLevel;
 
+    /// @notice Mapping of used hashes, to prevent reusing the same passport hash
+    /// @dev usedPassportHashes[passportHash] => true
+    mapping(bytes32 => bool) public usedPassportHashes;
+
     /// @notice Initializes the PassportDevZKBadge contract
     /// @param resolver_ The address of the resolver contract
     constructor(address resolver_) ScrollBadge(resolver_) Ownable() {}
@@ -73,8 +80,8 @@ contract PassportDevZKBadge is
     /// @notice Decodes the payload data to extract the badge level
     /// @param data The encoded payload data
     /// @return The decoded badge level as a uint256
-    function decodePayloadData(bytes memory data) public pure returns (uint256) {
-        return abi.decode(data, (uint256));
+    function decodePayloadData(bytes memory data) public pure returns (uint256, bytes32) {
+        return abi.decode(data, (uint256, bytes32));
     }
 
     /// @inheritdoc ScrollBadge
@@ -87,12 +94,18 @@ contract PassportDevZKBadge is
         returns (bool)
     {
         bytes memory payload = getPayload(attestation);
-        (uint256 level) = decodePayloadData(payload);
+
+        (uint256 level, bytes32 providerHash) = decodePayloadData(payload);
+
+        if (usedPassportHashes[providerHash]) {
+            revert HashUsed();
+        }
 
         if (level == 0) {
             revert Unauthorized();
         }
 
+        usedPassportHashes[providerHash] = true;
         badgeLevel[attestation.uid] = level;
 
         return super.onIssueBadge(attestation);
@@ -113,9 +126,9 @@ contract PassportDevZKBadge is
     /// @notice Check the level of the user's badge
     /// @param attestation The attestation to check
     /// @return The level of the user's badge
-    function checkLevel(Attestation memory attestation) public view returns (uint256) {
-        (uint256 level) = abi.decode(attestation.data, (uint256));
-        return level;
+    function checkLevel(Attestation memory attestation) public view returns (uint256, bytes32) {
+        (uint256 level, bytes32 providerHash) = abi.decode(attestation.data, (uint256, bytes32));
+        return (level, providerHash);
     }
 
     /// @inheritdoc IScrollBadgeUpgradeable
@@ -124,7 +137,14 @@ contract PassportDevZKBadge is
     /// @return A boolean indicating whether the badge can be upgraded
     function canUpgrade(bytes32 uid) external view returns (bool) {
         Attestation memory badge = getAndValidateBadge(uid);
-        uint256 newLevel = checkLevel(badge);
+
+        bytes memory payload = getPayload(badge);
+        (uint256 newLevel, bytes32 providerHash) = decodePayloadData(payload);
+
+        if (!isAttester[badge.attester]) {
+            revert Unauthorized();
+        }
+
         uint256 oldLevel = badgeLevel[uid];
         return newLevel > oldLevel;
     }
@@ -135,6 +155,7 @@ contract PassportDevZKBadge is
     function upgrade(bytes32 uid) external {
         Attestation memory attestation = getAttestation(uid);
 
+        
         if (!isAttester[attestation.attester]) {
             revert Unauthorized();
         }
@@ -144,9 +165,15 @@ contract PassportDevZKBadge is
         }
 
         bytes memory decodedLevelBytes = abi.decode(attestation.data, (bytes));
-        uint256 newLevel = abi.decode(decodedLevelBytes, (uint256));
+        (uint256 newLevel, bytes32 providerHash) = abi.decode(decodedLevelBytes, (uint256, bytes32));
+
+        if (usedPassportHashes[providerHash]) {
+            revert HashUsed();
+        }
 
         uint256 oldLevel = badgeLevel[uid];
+
+        console.log(newLevel, oldLevel);
 
         if (newLevel <= oldLevel) {
             revert CannotUpgrade(uid);
