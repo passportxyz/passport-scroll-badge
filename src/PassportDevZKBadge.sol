@@ -15,6 +15,7 @@ import {IScrollBadgeUpgradeable} from "@canvas/badge/extensions/IScrollBadgeUpgr
 import {ScrollBadgeCustomPayload} from "@canvas/badge/extensions/ScrollBadgeCustomPayload.sol";
 import {Unauthorized, CannotUpgrade} from "@canvas/Errors.sol";
 import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
+import {SchemaResolver, ISchemaResolver} from "@eas/contracts/resolver/SchemaResolver.sol";
 import "forge-std/console.sol";
 
 string constant PASSPORT_DEV_ZK_SCROLL_BADGE_SCHEMA = "uint256 level, bytes32 providerHash";
@@ -27,7 +28,8 @@ contract PassportDevZKBadge is
     ScrollBadgeAccessControl,
     ScrollBadgeCustomPayload,
     ScrollBadgeSingleton,
-    IScrollBadgeUpgradeable
+    IScrollBadgeUpgradeable,
+    SchemaResolver
 {
     // The instance of the EAS contract.
     IEAS public eas;
@@ -45,6 +47,9 @@ contract PassportDevZKBadge is
 
     /// Hash was already used
     error HashUsed();
+
+    /// @notice The schema to upgrade a badge
+    bytes32 public upgradeSchema;
 
     /// @notice Array of level thresholds for badge levels
     /// @dev levelThresholds[0] is the threshold for level 1
@@ -75,7 +80,13 @@ contract PassportDevZKBadge is
 
     /// @notice Initializes the PassportDevZKBadge contract
     /// @param resolver_ The address of the resolver contract
-    constructor(address resolver_) ScrollBadge(resolver_) Ownable() {}
+    constructor(address resolver_, address eas_) ScrollBadge(resolver_) SchemaResolver(IEAS(eas_)) Ownable() {
+        upgradeSchema = _eas.getSchemaRegistry().register(
+            "uint256 updatedScore, bytes32[] providerHashes",
+            ISchemaResolver(address(this)), // resolver
+            true // revocable
+        );
+    }
 
     /// @notice Decodes the payload data to extract the badge level
     /// @param data The encoded payload data
@@ -131,7 +142,7 @@ contract PassportDevZKBadge is
         Attestation memory attestation = getAttestation(uid);
 
         bytes memory payload = getPayload(attestation);
-        (uint256 newLevel, ) = decodePayloadData(payload);
+        (uint256 newLevel,) = decodePayloadData(payload);
 
         bytes32 originalUID = attestation.refUID;
 
@@ -148,7 +159,7 @@ contract PassportDevZKBadge is
     /// @param uid The unique identifier of the badge to upgrade
     function upgrade(bytes32 uid) external {
         Attestation memory attestation = getAttestation(uid);
-   
+
         if (!isAttester[attestation.attester]) {
             revert Unauthorized();
         }
@@ -170,7 +181,6 @@ contract PassportDevZKBadge is
         }
 
         uint256 oldLevel = badgeLevel[originalUID];
-        
 
         if (newLevel <= oldLevel) {
             revert CannotUpgrade(uid);
@@ -205,6 +215,25 @@ contract PassportDevZKBadge is
     function getAttestation(bytes32 attestationUID) public view returns (Attestation memory) {
         Attestation memory attestation = eas.getAttestation(attestationUID);
         return attestation;
+    }
+
+    // SchemaResolver overrides
+    function onAttest(Attestation calldata attestation, uint256 value)
+        internal
+        virtual
+        override(SchemaResolver)
+        returns (bool)
+    {
+        return true;
+    }
+
+    function onRevoke(Attestation calldata attestation, uint256 value)
+        internal
+        virtual
+        override(SchemaResolver)
+        returns (bool)
+    {
+        return true;
     }
 
     // Admin functions

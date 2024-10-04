@@ -31,7 +31,10 @@ contract TestPassportDevZKBadge is Test {
 
     function setUp() public {
         IEAS easInterface = IEAS(easAddress);
-        zkBadge = new PassportDevZKBadge(resolver);
+
+        zkBadge = new PassportDevZKBadge(resolver, easAddress);
+
+        updateSchema = zkBadge.upgradeSchema();
 
         string[] memory badgeLevelImageURIs = new string[](6);
         badgeLevelImageURIs[1] = "URIlevel1";
@@ -64,16 +67,13 @@ contract TestPassportDevZKBadge is Test {
 
         eas = EAS(easAddress);
 
-        // Register a schema that will be used for upgrades
-        updateSchema = eas.getSchemaRegistry().register("uint256 updatedScore", ISchemaResolver(address(0)), false);
-
         zkBadge.setEASAddress(easAddress);
     }
 
     function encodeData(uint256 currentLevel, string memory providerId) public returns (bytes memory) {
         bytes32 providerIdHash = keccak256(abi.encodePacked(providerId));
         bytes memory payload = abi.encode(currentLevel, providerIdHash);
-        
+
         return abi.encode(address(zkBadge), payload);
     }
 
@@ -265,7 +265,7 @@ contract TestPassportDevZKBadge is Test {
     function test_RevertIf_scoreTooLow() public {
         uint256 currentLevel = 0;
         bytes memory data = encodeData(currentLevel, defaultProviderHash);
-        
+
         AttestationRequestData memory attestation = AttestationRequestData({
             recipient: user,
             expirationTime: 0,

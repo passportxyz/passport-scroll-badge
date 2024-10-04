@@ -47,7 +47,7 @@ contract DeployPassportDevZKBadge is Script {
         descriptions[2] = "Contributors to zk games including 0xParc, Cartridge, etc";
         descriptions[3] = "Contributors to privacy focused L1s including ZCash, Aleo, Mina, etc";
 
-        PassportDevZKBadge badge = new PassportDevZKBadge(resolver);
+        PassportDevZKBadge badge = new PassportDevZKBadge(resolver, easAddress);
 
         badge.toggleAttester(gitcoinAttester, true);
         badge.setEASAddress(easAddress);
