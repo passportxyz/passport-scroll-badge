@@ -14,7 +14,7 @@ contract TestPassportDevZKBadge is Test {
     AttesterProxy attesterProxy;
     EAS eas;
 
-    bytes32 updateSchema;
+    bytes32 upgradeSchema;
 
     address constant mockDecoder = 0x1234567890123456789012345678901234567890;
 
@@ -34,7 +34,7 @@ contract TestPassportDevZKBadge is Test {
 
         zkBadge = new PassportDevZKBadge(resolver, easAddress);
 
-        updateSchema = zkBadge.upgradeSchema();
+        upgradeSchema = zkBadge.upgradeSchema();
 
         string[] memory badgeLevelImageURIs = new string[](6);
         badgeLevelImageURIs[1] = "URIlevel1";
@@ -144,7 +144,7 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
-        bytes32 newUid = eas.attest(AttestationRequest({schema: updateSchema, data: newAttestation}));
+        bytes32 newUid = eas.attest(AttestationRequest({schema: upgradeSchema, data: newAttestation}));
 
         assertEq(zkBadge.canUpgrade(newUid), true);
 
@@ -204,7 +204,7 @@ contract TestPassportDevZKBadge is Test {
 
         vm.expectRevert();
         vm.prank(user);
-        eas.attest(AttestationRequest({schema: updateSchema, data: newAttestation}));
+        eas.attest(AttestationRequest({schema: upgradeSchema, data: newAttestation}));
     }
 
     function test_issueLevel2_gitcoinAttestation() public {
