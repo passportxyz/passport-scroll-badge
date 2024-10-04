@@ -155,39 +155,9 @@ contract PassportDevZKBadge is
     }
 
     /// @inheritdoc IScrollBadgeUpgradeable
-    /// @dev Upgrades a badge to a new level
-    /// @param uid The unique identifier of the badge to upgrade
-    function upgrade(bytes32 uid) external {
-        Attestation memory attestation = getAttestation(uid);
-
-        if (!isAttester[attestation.attester]) {
-            revert Unauthorized();
-        }
-
-        if (msg.sender != attestation.recipient) {
-            revert Unauthorized();
-        }
-
-        bytes memory payload = getPayload(attestation);
-        (uint256 newLevel, bytes32 providerHash) = decodePayloadData(payload);
-        if (usedPassportHashes[providerHash]) {
-            revert HashUsed();
-        }
-
-        bytes32 originalUID = attestation.refUID;
-
-        if (originalUID == bytes32(0)) {
-            revert CannotUpgrade(uid);
-        }
-
-        uint256 oldLevel = badgeLevel[originalUID];
-
-        if (newLevel <= oldLevel) {
-            revert CannotUpgrade(uid);
-        }
-
-        badgeLevel[originalUID] = newLevel;
-        emit Upgrade(oldLevel, newLevel);
+    /// @dev Upgrades a badge to a new level - not utilized since upgrades are faciliated directly from the attestation
+    function upgrade(bytes32 _uid) external {
+        revert("Upgrade facilitation is done directly from the attestation");
     }
 
     /// @inheritdoc ScrollBadge
@@ -224,6 +194,31 @@ contract PassportDevZKBadge is
         override(SchemaResolver)
         returns (bool)
     {
+        if (!isAttester[attestation.attester]) {
+            revert Unauthorized();
+        }
+
+        bytes memory payload = getPayload(attestation);
+        (uint256 newLevel, bytes32 providerHash) = decodePayloadData(payload);
+        if (usedPassportHashes[providerHash]) {
+            revert HashUsed();
+        }
+
+        bytes32 originalUID = attestation.refUID;
+        bytes32 uid = attestation.uid;
+
+        if (originalUID == bytes32(0)) {
+            revert CannotUpgrade(uid);
+        }
+
+        uint256 oldLevel = badgeLevel[originalUID];
+
+        if (newLevel <= oldLevel) {
+            revert CannotUpgrade(uid);
+        }
+
+        badgeLevel[originalUID] = newLevel;
+        emit Upgrade(oldLevel, newLevel);
         return true;
     }
 
