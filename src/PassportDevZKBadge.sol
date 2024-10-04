@@ -128,18 +128,18 @@ contract PassportDevZKBadge is
     /// @param uid The unique identifier of the badge
     /// @return A boolean indicating whether the badge can be upgraded
     function canUpgrade(bytes32 uid) external view returns (bool) {
-        Attestation memory badge = getAndValidateBadge(uid);
+        Attestation memory attestation = getAttestation(uid);
 
-        bytes memory payload = getPayload(badge);
-        (uint256 newLevel, bytes32 providerHash) = decodePayloadData(payload);
+        bytes memory payload = getPayload(attestation);
+        (uint256 newLevel, ) = decodePayloadData(payload);
 
-        if (!isAttester[badge.attester]) {
-            revert Unauthorized();
+        bytes32 originalUID = attestation.refUID;
+
+        if (originalUID == bytes32(0)) {
+            return false;
         }
 
-        bytes32 originalUID = badge.refUID;
-
-        uint256 oldLevel = badgeLevel[originalUID];
+        uint256 oldLevel = badgeLevel[uid];
         return newLevel > oldLevel;
     }
 
@@ -148,8 +148,7 @@ contract PassportDevZKBadge is
     /// @param uid The unique identifier of the badge to upgrade
     function upgrade(bytes32 uid) external {
         Attestation memory attestation = getAttestation(uid);
-
-        
+   
         if (!isAttester[attestation.attester]) {
             revert Unauthorized();
         }
@@ -166,7 +165,12 @@ contract PassportDevZKBadge is
 
         bytes32 originalUID = attestation.refUID;
 
+        if (originalUID == bytes32(0)) {
+            revert CannotUpgrade(uid);
+        }
+
         uint256 oldLevel = badgeLevel[originalUID];
+        
 
         if (newLevel <= oldLevel) {
             revert CannotUpgrade(uid);

@@ -124,7 +124,10 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
+
         bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
+
+        assertEq(zkBadge.canUpgrade(uid), false);
 
         assertEq(zkBadge.badgeLevel(uid), 1);
 
@@ -142,6 +145,8 @@ contract TestPassportDevZKBadge is Test {
 
         vm.prank(gitcoinAttester);
         bytes32 newUid = eas.attest(AttestationRequest({schema: updateSchema, data: newAttestation}));
+
+        assertEq(zkBadge.canUpgrade(newUid), true);
 
         vm.prank(user);
         zkBadge.upgrade(newUid);
