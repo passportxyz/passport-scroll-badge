@@ -123,14 +123,6 @@ contract PassportDevZKBadge is
         return super.onRevokeBadge(attestation);
     }
 
-    /// @notice Check the level of the user's badge
-    /// @param attestation The attestation to check
-    /// @return The level of the user's badge
-    function checkLevel(Attestation memory attestation) public view returns (uint256, bytes32) {
-        (uint256 level, bytes32 providerHash) = abi.decode(attestation.data, (uint256, bytes32));
-        return (level, providerHash);
-    }
-
     /// @inheritdoc IScrollBadgeUpgradeable
     /// @dev Checks if a badge can be upgraded
     /// @param uid The unique identifier of the badge
@@ -145,7 +137,9 @@ contract PassportDevZKBadge is
             revert Unauthorized();
         }
 
-        uint256 oldLevel = badgeLevel[uid];
+        bytes32 originalUID = badge.refUID;
+
+        uint256 oldLevel = badgeLevel[originalUID];
         return newLevel > oldLevel;
     }
 
@@ -164,22 +158,21 @@ contract PassportDevZKBadge is
             revert Unauthorized();
         }
 
-        bytes memory decodedLevelBytes = abi.decode(attestation.data, (bytes));
-        (uint256 newLevel, bytes32 providerHash) = abi.decode(decodedLevelBytes, (uint256, bytes32));
-
+        bytes memory payload = getPayload(attestation);
+        (uint256 newLevel, bytes32 providerHash) = decodePayloadData(payload);
         if (usedPassportHashes[providerHash]) {
             revert HashUsed();
         }
 
-        uint256 oldLevel = badgeLevel[uid];
+        bytes32 originalUID = attestation.refUID;
 
-        console.log(newLevel, oldLevel);
+        uint256 oldLevel = badgeLevel[originalUID];
 
         if (newLevel <= oldLevel) {
             revert CannotUpgrade(uid);
         }
 
-        badgeLevel[uid] = newLevel;
+        badgeLevel[originalUID] = newLevel;
         emit Upgrade(oldLevel, newLevel);
     }
 

@@ -110,44 +110,44 @@ contract TestPassportDevZKBadge is Test {
         );
     }
 
-    // function test_upgrade_succeeds() public {
-    //     uint256 currentLevel = 1;
-    //     bytes memory data = encodeData(currentLevel, defaultProviderHash);
+    function test_upgrade_succeeds() public {
+        uint256 currentLevel = 1;
+        bytes memory data = encodeData(currentLevel, defaultProviderHash);
 
-    //     AttestationRequestData memory attestation = AttestationRequestData({
-    //         recipient: user,
-    //         expirationTime: 0,
-    //         revocable: false,
-    //         refUID: 0,
-    //         data: data,
-    //         value: 0
-    //     });
+        AttestationRequestData memory attestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: false,
+            refUID: 0,
+            data: data,
+            value: 0
+        });
 
-    //     vm.prank(gitcoinAttester);
-    //     bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
+        vm.prank(gitcoinAttester);
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
-    //     assertEq(zkBadge.badgeLevel(uid), 1);
+        assertEq(zkBadge.badgeLevel(uid), 1);
 
-    //     uint256 newLevel = 2;
-    //     bytes memory newData = encodeData(currentLevel, "GithubGuruNumber2");
+        uint256 newLevel = 2;
+        bytes memory newData = encodeData(newLevel, "GithubGuruNumber2");
 
-    //     AttestationRequestData memory newAttestation = AttestationRequestData({
-    //         recipient: user,
-    //         expirationTime: 0,
-    //         revocable: false,
-    //         refUID: 0,
-    //         data: newData,
-    //         value: 0
-    //     });
+        AttestationRequestData memory newAttestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: false,
+            refUID: uid,
+            data: newData,
+            value: 0
+        });
 
-    //     vm.prank(gitcoinAttester);
-    //     bytes32 newUid = eas.attest(AttestationRequest({schema: updateSchema, data: newAttestation}));
+        vm.prank(gitcoinAttester);
+        bytes32 newUid = eas.attest(AttestationRequest({schema: updateSchema, data: newAttestation}));
 
-    //     vm.prank(user);
-    //     zkBadge.upgrade(newUid);
+        vm.prank(user);
+        zkBadge.upgrade(newUid);
 
-    //     assertEq(zkBadge.badgeLevel(newUid), 2);
-    // }
+        assertEq(zkBadge.badgeLevel(uid), 2);
+    }
 
     function test_tx_reverts_if_same_hash_is_used_across_addresses() public {
         uint256 currentLevel = 1;
