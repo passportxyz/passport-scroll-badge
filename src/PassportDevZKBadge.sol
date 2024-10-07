@@ -74,9 +74,11 @@ contract PassportDevZKBadge is
     mapping(address => uint256) public badgeLevel;
 
     /// @notice Mapping of used hashes, to prevent reusing the same passport hash
-    /// @dev usedPassportHashes[passportHash] => true
-    mapping(bytes32 => bool) public usedPassportHashes;
+    /// @dev burntProviderHashes[passportHash] => true
+    mapping(bytes32 => bool) public burntProviderHashes;
 
+    /// @notice Mapping of user addresses to provider hash arrays, used in case a badge is revoked
+    /// @dev userProviderHashes[recipient] => providerHashes
     mapping(address => bytes32[]) public userProviderHashes;
 
     /// @notice Initializes the PassportDevZKBadge contract
@@ -104,10 +106,10 @@ contract PassportDevZKBadge is
     function _checkAndUpdateProviderHashes(bytes32[] memory providerHashes) internal {
         for (uint256 i = 0; i < providerHashes.length; i++) {
             bytes32 providerHash = providerHashes[i];
-            if (usedPassportHashes[providerHash]) {
+            if (burntProviderHashes[providerHash]) {
                 revert HashUsed();
             }
-            usedPassportHashes[providerHash] = true;
+            burntProviderHashes[providerHash] = true;
         }
     }
 
@@ -157,7 +159,7 @@ contract PassportDevZKBadge is
 
         uint256 providerHashLength = userProviderHashes[recipient].length;
         for (uint256 i = 0; i < providerHashLength;) {
-            usedPassportHashes[userProviderHashes[recipient][i]] = false;
+            burntProviderHashes[userProviderHashes[recipient][i]] = false;
             unchecked {
                 i++;
             }
@@ -247,8 +249,10 @@ contract PassportDevZKBadge is
 
         badgeLevel[recipient] = 0;
 
-        for (uint256 i = 0; i < userProviderHashes[recipient].length; i++) {
-            usedPassportHashes[userProviderHashes[recipient][i]] = false;
+        bytes32[] memory currentUserHashes = userProviderHashes[recipient];
+
+        for (uint256 i = 0; i < currentUserHashes.length; i++) {
+            burntProviderHashes[currentUserHashes[i]] = false;
         }
 
         userProviderHashes[recipient] = new bytes32[](0);

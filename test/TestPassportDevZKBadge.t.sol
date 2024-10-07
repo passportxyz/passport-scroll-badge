@@ -360,9 +360,9 @@ contract TestPassportDevZKBadge is Test {
         // Check that the badge level is reset to 0
         assertEq(zkBadge.badgeLevel(user), 0);
 
-        // Check that the usedPassportHashes are reset
+        // Check that the burntProviderHashes are reset
         bytes32 providerHash = keccak256(abi.encodePacked(defaultProviderHash));
-        assertFalse(zkBadge.usedPassportHashes(providerHash));
+        assertFalse(zkBadge.burntProviderHashes(providerHash));
     }
 
     function test_unsuccessful_revocation() public {
