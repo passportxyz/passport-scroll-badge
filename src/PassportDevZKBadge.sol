@@ -18,7 +18,7 @@ import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
 import {SchemaResolver, ISchemaResolver} from "@eas/contracts/resolver/SchemaResolver.sol";
 import "forge-std/console.sol";
 
-string constant PASSPORT_DEV_ZK_SCROLL_BADGE_SCHEMA = "uint256 level, bytes32 providerHash";
+string constant PASSPORT_DEV_ZK_SCROLL_BADGE_SCHEMA = "uint256 updatedScore, bytes32[] providerHashes";
 
 /// @title PassportDevZKBadge
 /// @notice A badge contract representing the user's passport score level on the Scroll network
@@ -91,8 +91,17 @@ contract PassportDevZKBadge is
     /// @notice Decodes the payload data to extract the badge level
     /// @param data The encoded payload data
     /// @return The decoded badge level as a uint256
-    function decodePayloadData(bytes memory data) public pure returns (uint256, bytes32) {
-        return abi.decode(data, (uint256, bytes32));
+    function decodePayloadData(bytes memory data) public pure returns (uint256, bytes32[] memory) {
+        return abi.decode(data, (uint256, bytes32[]));
+    }
+
+    function checkAndUpdateProviderHashes(bytes32[] memory providerHashes) internal {
+        for (uint i = 0; i < providerHashes.length; i++) {
+            if (usedPassportHashes[providerHashes[i]]) {
+                revert HashUsed();
+            }
+            usedPassportHashes[providerHashes[i]] = true;
+        }
     }
 
     /// @inheritdoc ScrollBadge
@@ -105,18 +114,14 @@ contract PassportDevZKBadge is
         returns (bool)
     {
         bytes memory payload = getPayload(attestation);
-
-        (uint256 level, bytes32 providerHash) = decodePayloadData(payload);
-
-        if (usedPassportHashes[providerHash]) {
-            revert HashUsed();
-        }
+        (uint256 level, bytes32[] memory providerHashes) = decodePayloadData(payload);
 
         if (level == 0) {
             revert Unauthorized();
         }
 
-        usedPassportHashes[providerHash] = true;
+        checkAndUpdateProviderHashes(providerHashes);
+
         badgeLevel[attestation.uid] = level;
 
         return super.onIssueBadge(attestation);
@@ -142,7 +147,13 @@ contract PassportDevZKBadge is
         Attestation memory attestation = getAttestation(uid);
 
         bytes memory payload = getPayload(attestation);
-        (uint256 newLevel,) = decodePayloadData(payload);
+        (uint256 newLevel, bytes32[] memory providerHashes) = decodePayloadData(payload);
+
+        for (uint i = 0; i < providerHashes.length; i++) {
+            if (usedPassportHashes[providerHashes[i]]) {
+                revert HashUsed();
+            }
+        }
 
         bytes32 originalUID = attestation.refUID;
 
@@ -156,7 +167,7 @@ contract PassportDevZKBadge is
 
     /// @inheritdoc IScrollBadgeUpgradeable
     /// @dev Upgrades a badge to a new level - not utilized since upgrades are faciliated directly from the attestation
-    function upgrade(bytes32 _uid) external {
+    function upgrade(bytes32 _uid) external pure {
         revert("Upgrade facilitation is done directly from the attestation");
     }
 
@@ -199,10 +210,8 @@ contract PassportDevZKBadge is
         }
 
         bytes memory payload = getPayload(attestation);
-        (uint256 newLevel, bytes32 providerHash) = decodePayloadData(payload);
-        if (usedPassportHashes[providerHash]) {
-            revert HashUsed();
-        }
+        (uint256 newLevel, bytes32[] memory providerHashes) = decodePayloadData(payload);
+        checkAndUpdateProviderHashes(providerHashes);
 
         bytes32 originalUID = attestation.refUID;
         bytes32 uid = attestation.uid;
