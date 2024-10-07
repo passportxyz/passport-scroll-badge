@@ -4,7 +4,14 @@ import "forge-std/Test.sol";
 import "src/PassportDevZKBadge.sol";
 import "src/PassportScoreScrollBadge.sol";
 import "src/AttesterProxy.sol";
-import {AttestationRequest, AttestationRequestData, EAS, Signature} from "@eas/contracts/EAS.sol";
+import {
+    AttestationRequest,
+    AttestationRequestData,
+    EAS,
+    Signature,
+    RevocationRequest,
+    RevocationRequestData
+} from "@eas/contracts/EAS.sol";
 import {Unauthorized} from "canvas-contracts/src/Errors.sol";
 import "forge-std/console.sol";
 import {SchemaResolver, ISchemaResolver} from "@eas/contracts/resolver/SchemaResolver.sol";
@@ -26,8 +33,11 @@ contract TestPassportDevZKBadge is Test {
 
     address constant user = 0x5F8eeFb88c2B97ebdC93fabE193fC39Bd9Da2F86;
     address constant user2 = 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045;
+    address constant unauthorizedAddress = 0x1111111111111111111111111111111111111111;
 
     string constant defaultProviderHash = "GithubGuru";
+
+    bytes32 constant revocationSchema = 0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
 
     function setUp() public {
         IEAS easInterface = IEAS(easAddress);
@@ -72,13 +82,17 @@ contract TestPassportDevZKBadge is Test {
 
     function encodeData(uint256 currentLevel, string[] memory providerIds) public view returns (bytes memory) {
         bytes32[] memory providerIdHashes = new bytes32[](providerIds.length);
-        
-        for (uint i = 0; i < providerIds.length; i++) {
+
+        for (uint256 i = 0; i < providerIds.length; i++) {
             providerIdHashes[i] = keccak256(abi.encodePacked(providerIds[i]));
         }
-        
+
         bytes memory payload = abi.encode(currentLevel, providerIdHashes);
         return abi.encode(address(zkBadge), payload);
+    }
+
+    function createRevocationRequest(bytes32 uid) internal pure returns (RevocationRequest memory) {
+        return RevocationRequest({schema: revocationSchema, data: RevocationRequestData({uid: uid, value: 0})});
     }
 
     function test_issueLevel1_gitcoinAttestation() public {
@@ -138,9 +152,6 @@ contract TestPassportDevZKBadge is Test {
 
         bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
-        assertEq(zkBadge.canUpgrade(uid), false);
-        
-
         assertEq(zkBadge.badgeLevel(user), 1);
 
         uint256 newLevel = 2;
@@ -160,8 +171,6 @@ contract TestPassportDevZKBadge is Test {
 
         vm.prank(gitcoinAttester);
         bytes32 newUid = eas.attest(AttestationRequest({schema: upgradeSchema, data: newAttestation}));
-
-        assertEq(zkBadge.canUpgrade(newUid), false);
 
         assertEq(zkBadge.badgeLevel(user), 2);
     }
@@ -198,7 +207,7 @@ contract TestPassportDevZKBadge is Test {
             value: 0
         });
 
-        vm.expectRevert();
+        vm.expectRevert(PassportDevZKBadge.HashUsed.selector);
         vm.prank(gitcoinAttester);
         eas.attest(AttestationRequest({schema: schema, data: attestation2}));
     }
@@ -218,7 +227,7 @@ contract TestPassportDevZKBadge is Test {
             value: 0
         });
 
-        vm.expectRevert();
+        vm.expectRevert(Unauthorized.selector);
         vm.prank(user);
         eas.attest(AttestationRequest({schema: upgradeSchema, data: newAttestation}));
     }
@@ -319,5 +328,72 @@ contract TestPassportDevZKBadge is Test {
         //         ))
         //     )
         // );
+    }
+
+    function test_successful_revocation() public {
+        // Issue a badge
+        uint256 currentLevel = 1;
+        string[] memory providerIdHashes = new string[](1);
+        providerIdHashes[0] = defaultProviderHash;
+        bytes memory data = encodeData(currentLevel, providerIdHashes);
+
+        AttestationRequestData memory attestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: true,
+            refUID: 0,
+            data: data,
+            value: 0
+        });
+
+        vm.prank(gitcoinAttester);
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
+
+        assertEq(zkBadge.badgeLevel(user), 1);
+
+        // Revoke the badge
+        RevocationRequest memory revocationRequest = createRevocationRequest(uid);
+
+        vm.prank(gitcoinAttester);
+        eas.revoke(revocationRequest);
+
+        // Check that the badge level is reset to 0
+        assertEq(zkBadge.badgeLevel(user), 0);
+
+        // Check that the usedPassportHashes are reset
+        bytes32 providerHash = keccak256(abi.encodePacked(defaultProviderHash));
+        assertFalse(zkBadge.usedPassportHashes(providerHash));
+    }
+
+    function test_unsuccessful_revocation() public {
+        // Issue a badge
+        uint256 currentLevel = 1;
+        string[] memory providerIdHashes = new string[](1);
+        providerIdHashes[0] = defaultProviderHash;
+        bytes memory data = encodeData(currentLevel, providerIdHashes);
+
+        AttestationRequestData memory attestation = AttestationRequestData({
+            recipient: user,
+            expirationTime: 0,
+            revocable: true,
+            refUID: 0,
+            data: data,
+            value: 0
+        });
+
+        vm.prank(gitcoinAttester);
+        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
+
+        assertEq(zkBadge.badgeLevel(user), 1);
+
+        // Attempt to revoke the badge from an unauthorized address
+        RevocationRequest memory revocationRequest = createRevocationRequest(uid);
+
+        vm.prank(unauthorizedAddress);
+        vm.expectRevert(AccessDenied.selector);
+        eas.revoke(revocationRequest);
+
+        // Verify that the badge level remains unchanged
+        assertEq(zkBadge.badgeLevel(user), 1);
     }
 }

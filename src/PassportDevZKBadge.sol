@@ -17,6 +17,7 @@ import {Unauthorized, CannotUpgrade} from "@canvas/Errors.sol";
 import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
 import {SchemaResolver, ISchemaResolver} from "@eas/contracts/resolver/SchemaResolver.sol";
 
+/// @dev The schema for the passport dev ZK Scroll badge
 string constant PASSPORT_DEV_ZK_SCROLL_BADGE_SCHEMA = "uint256 updatedScore, bytes32[] providerHashes";
 
 /// @title PassportDevZKBadge
@@ -27,10 +28,9 @@ contract PassportDevZKBadge is
     ScrollBadgeAccessControl,
     ScrollBadgeCustomPayload,
     ScrollBadgeSingleton,
-    IScrollBadgeUpgradeable,
     SchemaResolver
 {
-    // The instance of the EAS contract.
+    /// @notice The instance of the EAS contract
     IEAS public eas;
 
     /// @dev Emitted when a badge is upgraded
@@ -41,10 +41,10 @@ contract PassportDevZKBadge is
     /// @dev Emitted when the EAS contract address is set
     event EASSet(address easAddress);
 
-    /// Zero value was passed
+    /// @dev Thrown when a zero value is passed where it's not allowed
     error ZeroValue();
 
-    /// Hash was already used
+    /// @dev Thrown when attempting to use a hash that has already been used
     error HashUsed();
 
     /// @notice The schema to upgrade a badge
@@ -69,7 +69,7 @@ contract PassportDevZKBadge is
     /// @dev This array should have a length of levelThresholds.length + 1
     string[] public badgeLevelDescriptions;
 
-    /// @notice Mapping of badge UID to current level
+    /// @notice Mapping of badge level to user address
     /// @dev badge UID => current level
     mapping(address => uint256) public badgeLevel;
 
@@ -92,12 +92,17 @@ contract PassportDevZKBadge is
     /// @notice Decodes the payload data to extract the badge level
     /// @param data The encoded payload data
     /// @return The decoded badge level as a uint256
+    /// @notice Decodes the payload data to extract the badge level and provider hashes
+    /// @param data The encoded payload data
+    /// @return The decoded badge level as a uint256 and an array of provider hashes
     function decodePayloadData(bytes memory data) public pure returns (uint256, bytes32[] memory) {
         return abi.decode(data, (uint256, bytes32[]));
     }
 
+    /// @dev Checks and updates the provider hashes
+    /// @param providerHashes Array of provider hashes to check and update
     function _checkAndUpdateProviderHashes(bytes32[] memory providerHashes) internal {
-        for (uint i = 0; i < providerHashes.length; i++) {
+        for (uint256 i = 0; i < providerHashes.length; i++) {
             if (usedPassportHashes[providerHashes[i]]) {
                 revert HashUsed();
             }
@@ -138,46 +143,18 @@ contract PassportDevZKBadge is
         override(ScrollBadge, ScrollBadgeAccessControl, ScrollBadgeSingleton, ScrollBadgeCustomPayload)
         returns (bool)
     {
+        if (!isAttester[attestation.attester]) {
+            revert Unauthorized();
+        }
+
         badgeLevel[attestation.recipient] = 0;
 
-        for (uint i = 0; i < userProviderHashes[attestation.recipient].length; i++) {
+        for (uint256 i = 0; i < userProviderHashes[attestation.recipient].length; i++) {
             usedPassportHashes[userProviderHashes[attestation.recipient][i]] = false;
         }
 
         userProviderHashes[attestation.recipient] = new bytes32[](0);
         return super.onRevokeBadge(attestation);
-    }
-
-    /// @inheritdoc IScrollBadgeUpgradeable
-    /// @dev Checks if a badge can be upgraded
-    /// @param uid The unique identifier of the badge
-    /// @return A boolean indicating whether the badge can be upgraded
-    function canUpgrade(bytes32 uid) external view returns (bool) {
-        Attestation memory attestation = getAttestation(uid);
-
-        bytes memory payload = getPayload(attestation);
-        (uint256 newLevel, bytes32[] memory providerHashes) = decodePayloadData(payload);
-
-        for (uint i = 0; i < providerHashes.length; i++) {
-            if (usedPassportHashes[providerHashes[i]]) {
-                return false;
-            }
-        }
-
-        bytes32 originalUID = attestation.refUID;
-
-        if (originalUID == bytes32(0)) {
-            return false;
-        }
-
-        uint256 oldLevel = badgeLevel[attestation.recipient];
-        return newLevel > oldLevel;
-    }
-
-    /// @inheritdoc IScrollBadgeUpgradeable
-    /// @dev Upgrades a badge to a new level - not utilized since upgrades are faciliated directly from the attestation
-    function upgrade(bytes32 _uid) external pure {
-        revert("Upgrade facilitation is done directly from the attestation");
     }
 
     /// @inheritdoc ScrollBadge
@@ -199,16 +176,20 @@ contract PassportDevZKBadge is
         return string(abi.encodePacked("data:application/json;base64,", tokenUriJson));
     }
 
-    /**
-     * Return an attestation for a given UID
-     * @param attestationUID The UID of the attestation
-     */
+    /// @notice Return an attestation for a given UID
+    /// @param attestationUID The UID of the attestation
+    /// @return The Attestation struct for the given UID
     function getAttestation(bytes32 attestationUID) public view returns (Attestation memory) {
         Attestation memory attestation = eas.getAttestation(attestationUID);
         return attestation;
     }
 
     // SchemaResolver overrides
+    /// @inheritdoc SchemaResolver
+    /// @dev Handles the attestation process for upgrading a badge
+    /// @param attestation The attestation data
+    /// @param value The value sent with the attestation (unused in this implementation)
+    /// @return A boolean indicating whether the attestation was successful
     function onAttest(Attestation calldata attestation, uint256 value)
         internal
         virtual
@@ -237,12 +218,28 @@ contract PassportDevZKBadge is
         return true;
     }
 
+    /// @inheritdoc SchemaResolver
+    /// @dev Handles the revocation process for a badge
+    /// @param attestation The attestation data
+    /// @param value The value sent with the revocation (unused in this implementation)
+    /// @return A boolean indicating whether the revocation was successful
     function onRevoke(Attestation calldata attestation, uint256 value)
         internal
         virtual
         override(SchemaResolver)
         returns (bool)
     {
+        if (!isAttester[attestation.attester]) {
+            revert Unauthorized();
+        }
+
+        badgeLevel[attestation.recipient] = 0;
+
+        for (uint256 i = 0; i < userProviderHashes[attestation.recipient].length; i++) {
+            usedPassportHashes[userProviderHashes[attestation.recipient][i]] = false;
+        }
+
+        userProviderHashes[attestation.recipient] = new bytes32[](0);
         return true;
     }
 
