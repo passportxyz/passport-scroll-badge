@@ -103,10 +103,11 @@ contract PassportDevZKBadge is
     /// @param providerHashes Array of provider hashes to check and update
     function _checkAndUpdateProviderHashes(bytes32[] memory providerHashes) internal {
         for (uint256 i = 0; i < providerHashes.length; i++) {
-            if (usedPassportHashes[providerHashes[i]]) {
+            bytes32 providerHash = providerHashes[i];
+            if (usedPassportHashes[providerHash]) {
                 revert HashUsed();
             }
-            usedPassportHashes[providerHashes[i]] = true;
+            usedPassportHashes[providerHash] = true;
         }
     }
 
@@ -128,8 +129,10 @@ contract PassportDevZKBadge is
 
         _checkAndUpdateProviderHashes(providerHashes);
 
-        badgeLevel[attestation.recipient] = level;
-        userProviderHashes[attestation.recipient] = providerHashes;
+        address recipient = attestation.recipient;
+
+        badgeLevel[recipient] = level;
+        userProviderHashes[recipient] = providerHashes;
 
         return super.onIssueBadge(attestation);
     }
@@ -147,13 +150,20 @@ contract PassportDevZKBadge is
             revert Unauthorized();
         }
 
-        badgeLevel[attestation.recipient] = 0;
+        address recipient = attestation.recipient;
 
-        for (uint256 i = 0; i < userProviderHashes[attestation.recipient].length; i++) {
-            usedPassportHashes[userProviderHashes[attestation.recipient][i]] = false;
+        badgeLevel[recipient] = 0;
+
+
+        uint256 providerHashLength = userProviderHashes[recipient].length;
+        for (uint256 i = 0; i < providerHashLength;) {
+            usedPassportHashes[userProviderHashes[recipient][i]] = false;
+            unchecked {
+                i++;
+            }
         }
 
-        userProviderHashes[attestation.recipient] = new bytes32[](0);
+        userProviderHashes[recipient] = new bytes32[](0);
         return super.onRevokeBadge(attestation);
     }
 
@@ -233,13 +243,15 @@ contract PassportDevZKBadge is
             revert Unauthorized();
         }
 
-        badgeLevel[attestation.recipient] = 0;
+        address recipient = attestation.recipient;
 
-        for (uint256 i = 0; i < userProviderHashes[attestation.recipient].length; i++) {
-            usedPassportHashes[userProviderHashes[attestation.recipient][i]] = false;
+        badgeLevel[recipient] = 0;
+
+        for (uint256 i = 0; i < userProviderHashes[recipient].length; i++) {
+            usedPassportHashes[userProviderHashes[recipient][i]] = false;
         }
 
-        userProviderHashes[attestation.recipient] = new bytes32[](0);
+        userProviderHashes[recipient] = new bytes32[](0);
         return true;
     }
 
