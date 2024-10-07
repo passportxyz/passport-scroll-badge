@@ -16,7 +16,6 @@ import {ScrollBadgeCustomPayload} from "@canvas/badge/extensions/ScrollBadgeCust
 import {Unauthorized, CannotUpgrade} from "@canvas/Errors.sol";
 import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
 import {SchemaResolver, ISchemaResolver} from "@eas/contracts/resolver/SchemaResolver.sol";
-import "forge-std/console.sol";
 
 string constant PASSPORT_DEV_ZK_SCROLL_BADGE_SCHEMA = "uint256 updatedScore, bytes32[] providerHashes";
 
@@ -72,11 +71,13 @@ contract PassportDevZKBadge is
 
     /// @notice Mapping of badge UID to current level
     /// @dev badge UID => current level
-    mapping(bytes32 => uint256) public badgeLevel;
+    mapping(address => uint256) public badgeLevel;
 
     /// @notice Mapping of used hashes, to prevent reusing the same passport hash
     /// @dev usedPassportHashes[passportHash] => true
     mapping(bytes32 => bool) public usedPassportHashes;
+
+    mapping(address => bytes32[]) public userProviderHashes;
 
     /// @notice Initializes the PassportDevZKBadge contract
     /// @param resolver_ The address of the resolver contract
@@ -95,7 +96,7 @@ contract PassportDevZKBadge is
         return abi.decode(data, (uint256, bytes32[]));
     }
 
-    function checkAndUpdateProviderHashes(bytes32[] memory providerHashes) internal {
+    function _checkAndUpdateProviderHashes(bytes32[] memory providerHashes) internal {
         for (uint i = 0; i < providerHashes.length; i++) {
             if (usedPassportHashes[providerHashes[i]]) {
                 revert HashUsed();
@@ -120,9 +121,10 @@ contract PassportDevZKBadge is
             revert Unauthorized();
         }
 
-        checkAndUpdateProviderHashes(providerHashes);
+        _checkAndUpdateProviderHashes(providerHashes);
 
-        badgeLevel[attestation.uid] = level;
+        badgeLevel[attestation.recipient] = level;
+        userProviderHashes[attestation.recipient] = providerHashes;
 
         return super.onIssueBadge(attestation);
     }
@@ -136,6 +138,13 @@ contract PassportDevZKBadge is
         override(ScrollBadge, ScrollBadgeAccessControl, ScrollBadgeSingleton, ScrollBadgeCustomPayload)
         returns (bool)
     {
+        badgeLevel[attestation.recipient] = 0;
+
+        for (uint i = 0; i < userProviderHashes[attestation.recipient].length; i++) {
+            usedPassportHashes[userProviderHashes[attestation.recipient][i]] = false;
+        }
+
+        userProviderHashes[attestation.recipient] = new bytes32[](0);
         return super.onRevokeBadge(attestation);
     }
 
@@ -151,7 +160,7 @@ contract PassportDevZKBadge is
 
         for (uint i = 0; i < providerHashes.length; i++) {
             if (usedPassportHashes[providerHashes[i]]) {
-                revert HashUsed();
+                return false;
             }
         }
 
@@ -161,7 +170,7 @@ contract PassportDevZKBadge is
             return false;
         }
 
-        uint256 oldLevel = badgeLevel[uid];
+        uint256 oldLevel = badgeLevel[attestation.recipient];
         return newLevel > oldLevel;
     }
 
@@ -176,7 +185,8 @@ contract PassportDevZKBadge is
     /// @param uid The unique identifier of the badge
     /// @return A string containing the token URI
     function badgeTokenURI(bytes32 uid) public view override returns (string memory) {
-        uint256 level = badgeLevel[uid];
+        address recipient = getAttestation(uid).recipient;
+        uint256 level = badgeLevel[recipient];
         string memory name = badgeLevelNames[level];
         string memory description = badgeLevelDescriptions[level];
         string memory image = badgeLevelImageURIs[level];
@@ -211,22 +221,18 @@ contract PassportDevZKBadge is
 
         bytes memory payload = getPayload(attestation);
         (uint256 newLevel, bytes32[] memory providerHashes) = decodePayloadData(payload);
-        checkAndUpdateProviderHashes(providerHashes);
+        _checkAndUpdateProviderHashes(providerHashes);
 
-        bytes32 originalUID = attestation.refUID;
-        bytes32 uid = attestation.uid;
+        address recipient = attestation.recipient;
 
-        if (originalUID == bytes32(0)) {
-            revert CannotUpgrade(uid);
-        }
-
-        uint256 oldLevel = badgeLevel[originalUID];
+        uint256 oldLevel = badgeLevel[recipient];
 
         if (newLevel <= oldLevel) {
-            revert CannotUpgrade(uid);
+            revert CannotUpgrade(attestation.uid);
         }
 
-        badgeLevel[originalUID] = newLevel;
+        badgeLevel[recipient] = newLevel;
+        userProviderHashes[recipient] = providerHashes;
         emit Upgrade(oldLevel, newLevel);
         return true;
     }

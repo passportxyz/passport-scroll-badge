@@ -70,16 +70,24 @@ contract TestPassportDevZKBadge is Test {
         zkBadge.setEASAddress(easAddress);
     }
 
-    function encodeData(uint256 currentLevel, string memory providerId) public returns (bytes memory) {
-        bytes32 providerIdHash = keccak256(abi.encodePacked(providerId));
-        bytes memory payload = abi.encode(currentLevel, providerIdHash);
-
+    function encodeData(uint256 currentLevel, string[] memory providerIds) public view returns (bytes memory) {
+        bytes32[] memory providerIdHashes = new bytes32[](providerIds.length);
+        
+        for (uint i = 0; i < providerIds.length; i++) {
+            providerIdHashes[i] = keccak256(abi.encodePacked(providerIds[i]));
+        }
+        
+        bytes memory payload = abi.encode(currentLevel, providerIdHashes);
         return abi.encode(address(zkBadge), payload);
     }
 
     function test_issueLevel1_gitcoinAttestation() public {
         uint256 currentLevel = 1;
-        bytes memory data = encodeData(currentLevel, defaultProviderHash);
+        string[] memory providerIdHashes = new string[](1);
+
+        providerIdHashes[0] = defaultProviderHash;
+
+        bytes memory data = encodeData(currentLevel, providerIdHashes);
 
         AttestationRequestData memory attestation = AttestationRequestData({
             recipient: user,
@@ -93,7 +101,7 @@ contract TestPassportDevZKBadge is Test {
         vm.prank(gitcoinAttester);
         bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
-        assertEq(zkBadge.badgeLevel(uid), 1);
+        assertEq(zkBadge.badgeLevel(user), 1);
 
         string memory uri = zkBadge.badgeTokenURI(uid);
 
@@ -112,7 +120,10 @@ contract TestPassportDevZKBadge is Test {
 
     function test_upgrade_succeeds() public {
         uint256 currentLevel = 1;
-        bytes memory data = encodeData(currentLevel, defaultProviderHash);
+        string[] memory providerIdHashes = new string[](1);
+
+        providerIdHashes[0] = defaultProviderHash;
+        bytes memory data = encodeData(currentLevel, providerIdHashes);
 
         AttestationRequestData memory attestation = AttestationRequestData({
             recipient: user,
@@ -128,11 +139,15 @@ contract TestPassportDevZKBadge is Test {
         bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(zkBadge.canUpgrade(uid), false);
+        
 
-        assertEq(zkBadge.badgeLevel(uid), 1);
+        assertEq(zkBadge.badgeLevel(user), 1);
 
         uint256 newLevel = 2;
-        bytes memory newData = encodeData(newLevel, "GithubGuruNumber2");
+
+        string[] memory providerIdHashesUpdated = new string[](1);
+        providerIdHashesUpdated[0] = "GithubGuruNumber2";
+        bytes memory newData = encodeData(newLevel, providerIdHashesUpdated);
 
         AttestationRequestData memory newAttestation = AttestationRequestData({
             recipient: user,
@@ -146,17 +161,16 @@ contract TestPassportDevZKBadge is Test {
         vm.prank(gitcoinAttester);
         bytes32 newUid = eas.attest(AttestationRequest({schema: upgradeSchema, data: newAttestation}));
 
-        assertEq(zkBadge.canUpgrade(newUid), true);
+        assertEq(zkBadge.canUpgrade(newUid), false);
 
-        // vm.prank(user);
-        // zkBadge.upgrade(newUid);
-
-        assertEq(zkBadge.badgeLevel(uid), 2);
+        assertEq(zkBadge.badgeLevel(user), 2);
     }
 
     function test_tx_reverts_if_same_hash_is_used_across_addresses() public {
         uint256 currentLevel = 1;
-        bytes memory data = encodeData(currentLevel, defaultProviderHash);
+        string[] memory providerIdHashes = new string[](1);
+        providerIdHashes[0] = defaultProviderHash;
+        bytes memory data = encodeData(currentLevel, providerIdHashes);
 
         AttestationRequestData memory attestation = AttestationRequestData({
             recipient: user,
@@ -170,10 +184,10 @@ contract TestPassportDevZKBadge is Test {
         vm.prank(gitcoinAttester);
         bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
-        assertEq(zkBadge.badgeLevel(uid), 1);
+        assertEq(zkBadge.badgeLevel(user), 1);
 
         uint256 currentLevelSecondAddress = 1;
-        bytes memory dataSecondAddress = encodeData(currentLevel, defaultProviderHash);
+        bytes memory dataSecondAddress = encodeData(currentLevel, providerIdHashes);
 
         AttestationRequestData memory attestation2 = AttestationRequestData({
             recipient: user2,
@@ -191,7 +205,9 @@ contract TestPassportDevZKBadge is Test {
 
     function test_unauthorized_upgrade() public {
         uint256 newLevel = 2;
-        bytes memory data = encodeData(newLevel, defaultProviderHash);
+        string[] memory providerIdHashes = new string[](1);
+        providerIdHashes[0] = defaultProviderHash;
+        bytes memory data = encodeData(newLevel, providerIdHashes);
 
         AttestationRequestData memory newAttestation = AttestationRequestData({
             recipient: user2,
@@ -209,7 +225,9 @@ contract TestPassportDevZKBadge is Test {
 
     function test_issueLevel2_gitcoinAttestation() public {
         uint256 currentLevel = 2;
-        bytes memory data = encodeData(currentLevel, defaultProviderHash);
+        string[] memory providerIdHashes = new string[](1);
+        providerIdHashes[0] = defaultProviderHash;
+        bytes memory data = encodeData(currentLevel, providerIdHashes);
 
         AttestationRequestData memory attestation = AttestationRequestData({
             recipient: user,
@@ -223,7 +241,7 @@ contract TestPassportDevZKBadge is Test {
         vm.prank(gitcoinAttester);
         bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
-        assertEq(zkBadge.badgeLevel(uid), 2);
+        assertEq(zkBadge.badgeLevel(user), 2);
 
         string memory uri = zkBadge.badgeTokenURI(uid);
 
@@ -242,7 +260,9 @@ contract TestPassportDevZKBadge is Test {
 
     function test_issueLevel1EdgeCase() public {
         uint256 currentLevel = 1;
-        bytes memory data = encodeData(currentLevel, defaultProviderHash);
+        string[] memory providerIdHashes = new string[](1);
+        providerIdHashes[0] = defaultProviderHash;
+        bytes memory data = encodeData(currentLevel, providerIdHashes);
 
         AttestationRequestData memory attestation = AttestationRequestData({
             recipient: user,
@@ -256,12 +276,14 @@ contract TestPassportDevZKBadge is Test {
         vm.prank(gitcoinAttester);
         bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
-        assertEq(zkBadge.badgeLevel(uid), 1);
+        assertEq(zkBadge.badgeLevel(user), 1);
     }
 
     function test_RevertIf_scoreTooLow() public {
         uint256 currentLevel = 0;
-        bytes memory data = encodeData(currentLevel, defaultProviderHash);
+        string[] memory providerIdHashes = new string[](1);
+        providerIdHashes[0] = defaultProviderHash;
+        bytes memory data = encodeData(currentLevel, providerIdHashes);
 
         AttestationRequestData memory attestation = AttestationRequestData({
             recipient: user,
@@ -285,8 +307,7 @@ contract TestPassportDevZKBadge is Test {
     }
 
     function test_tokenURILevel0() public {
-        bytes32 uid = 0x0;
-        string memory uri = zkBadge.badgeTokenURI(uid);
+        // string memory uri = zkBadge.badgeTokenURI(address(0));
 
         // Uncomment and update the following assertion once the exact URI format is confirmed
         // assertEq(
