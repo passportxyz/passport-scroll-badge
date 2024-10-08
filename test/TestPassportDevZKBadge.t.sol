@@ -40,8 +40,6 @@ contract TestPassportDevZKBadge is Test {
     bytes32 constant revocationSchema = 0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
 
     function setUp() public {
-        IEAS easInterface = IEAS(easAddress);
-
         zkBadge = new PassportDevZKBadge(resolver, easAddress);
 
         upgradeSchema = zkBadge.upgradeSchema();
@@ -170,7 +168,7 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
-        bytes32 newUid = eas.attest(AttestationRequest({schema: upgradeSchema, data: newAttestation}));
+        eas.attest(AttestationRequest({schema: upgradeSchema, data: newAttestation}));
 
         assertEq(zkBadge.badgeLevel(user), 2);
     }
@@ -191,11 +189,10 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
-        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
+        eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(zkBadge.badgeLevel(user), 1);
 
-        uint256 currentLevelSecondAddress = 1;
         bytes memory dataSecondAddress = encodeData(currentLevel, providerIdHashes);
 
         AttestationRequestData memory attestation2 = AttestationRequestData({
@@ -283,7 +280,7 @@ contract TestPassportDevZKBadge is Test {
         });
 
         vm.prank(gitcoinAttester);
-        bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
+        eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(zkBadge.badgeLevel(user), 1);
     }
@@ -350,6 +347,9 @@ contract TestPassportDevZKBadge is Test {
         bytes32 uid = eas.attest(AttestationRequest({schema: schema, data: attestation}));
 
         assertEq(zkBadge.badgeLevel(user), 1);
+        uint256 index = 0;
+        bytes32 currentHashes = zkBadge.userProviderHashes(user, index);
+        assertEq(currentHashes, keccak256(abi.encodePacked(defaultProviderHash)));
 
         // Revoke the badge
         RevocationRequest memory revocationRequest = createRevocationRequest(uid);
@@ -363,6 +363,9 @@ contract TestPassportDevZKBadge is Test {
         // Check that the burntProviderHashes are reset
         bytes32 providerHash = keccak256(abi.encodePacked(defaultProviderHash));
         assertFalse(zkBadge.burntProviderHashes(providerHash));
+        uint256 index2 = 0;
+        vm.expectRevert();
+        zkBadge.userProviderHashes(user, index2);
     }
 
     function test_unsuccessful_revocation() public {

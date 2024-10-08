@@ -91,9 +91,6 @@ contract PassportDevZKBadge is
         );
     }
 
-    /// @notice Decodes the payload data to extract the badge level
-    /// @param data The encoded payload data
-    /// @return The decoded badge level as a uint256
     /// @notice Decodes the payload data to extract the badge level and provider hashes
     /// @param data The encoded payload data
     /// @return The decoded badge level as a uint256 and an array of provider hashes
@@ -132,7 +129,6 @@ contract PassportDevZKBadge is
         _checkAndUpdateProviderHashes(providerHashes);
 
         address recipient = attestation.recipient;
-
         badgeLevel[recipient] = level;
         userProviderHashes[recipient] = providerHashes;
 
@@ -165,7 +161,7 @@ contract PassportDevZKBadge is
             }
         }
 
-        userProviderHashes[recipient] = new bytes32[](0);
+        delete userProviderHashes[recipient];
         return super.onRevokeBadge(attestation);
     }
 
@@ -200,9 +196,8 @@ contract PassportDevZKBadge is
     /// @inheritdoc SchemaResolver
     /// @dev Handles the attestation process for upgrading a badge
     /// @param attestation The attestation data
-    /// @param value The value sent with the attestation (unused in this implementation)
     /// @return A boolean indicating whether the attestation was successful
-    function onAttest(Attestation calldata attestation, uint256 value)
+    function onAttest(Attestation calldata attestation, uint256 /* value */)
         internal
         virtual
         override(SchemaResolver)
@@ -233,9 +228,8 @@ contract PassportDevZKBadge is
     /// @inheritdoc SchemaResolver
     /// @dev Handles the revocation process for a badge
     /// @param attestation The attestation data
-    /// @param value The value sent with the revocation (unused in this implementation)
     /// @return A boolean indicating whether the revocation was successful
-    function onRevoke(Attestation calldata attestation, uint256 value)
+    function onRevoke(Attestation calldata attestation, uint256  /* value */)
         internal
         virtual
         override(SchemaResolver)
