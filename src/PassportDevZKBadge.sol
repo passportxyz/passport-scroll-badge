@@ -110,6 +110,18 @@ contract PassportDevZKBadge is
         }
     }
 
+    /// @dev Updates the user's provider hashes
+    /// @param user The user address
+    /// @param providerHashes Array of provider hashes to update
+    function updateUserHashes(address user, bytes32[] memory providerHashes) internal {
+        for (uint256 i = 0; i < providerHashes.length;) {
+            userProviderHashes[user].push(providerHashes[i]);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
     /// @inheritdoc ScrollBadge
     /// @dev Handles the issuance of a new badge
     /// @param attestation The attestation data for the badge being issued
@@ -130,7 +142,7 @@ contract PassportDevZKBadge is
 
         address recipient = attestation.recipient;
         badgeLevel[recipient] = level;
-        userProviderHashes[recipient] = providerHashes;
+        updateUserHashes(recipient, providerHashes);
 
         return super.onIssueBadge(attestation);
     }
@@ -151,7 +163,6 @@ contract PassportDevZKBadge is
         address recipient = attestation.recipient;
 
         badgeLevel[recipient] = 0;
-
 
         uint256 providerHashLength = userProviderHashes[recipient].length;
         for (uint256 i = 0; i < providerHashLength;) {
@@ -197,7 +208,7 @@ contract PassportDevZKBadge is
     /// @dev Handles the attestation process for upgrading a badge
     /// @param attestation The attestation data
     /// @return A boolean indicating whether the attestation was successful
-    function onAttest(Attestation calldata attestation, uint256 /* value */)
+    function onAttest(Attestation calldata attestation, uint256 /* value */ )
         internal
         virtual
         override(SchemaResolver)
@@ -220,7 +231,7 @@ contract PassportDevZKBadge is
         }
 
         badgeLevel[recipient] = newLevel;
-        userProviderHashes[recipient] = providerHashes;
+        updateUserHashes(recipient, providerHashes);
         emit Upgrade(oldLevel, newLevel);
         return true;
     }
@@ -229,7 +240,7 @@ contract PassportDevZKBadge is
     /// @dev Handles the revocation process for a badge
     /// @param attestation The attestation data
     /// @return A boolean indicating whether the revocation was successful
-    function onRevoke(Attestation calldata attestation, uint256  /* value */)
+    function onRevoke(Attestation calldata attestation, uint256 /* value */ )
         internal
         virtual
         override(SchemaResolver)
