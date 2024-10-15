@@ -18,6 +18,7 @@ contract DeployPassportDevZKBadge is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
+        console.log("Deployer: ", vm.addr(deployerPrivateKey));
 
         // Set level thresholds (example values, adjust as needed)
         uint256[] memory levelThresholds = new uint256[](3);
@@ -25,39 +26,94 @@ contract DeployPassportDevZKBadge is Script {
         levelThresholds[1] = 200;
         levelThresholds[2] = 300;
 
-        // Set badge level image URIs (example values, replace with actual URIs)
-        string[] memory imageURIs = new string[](4);
-        imageURIs[0] = "https://example.com/no-score.png";
-        imageURIs[1] = "https://example.com/level1.png";
-        imageURIs[2] = "https://example.com/level2.png";
-        imageURIs[3] = "https://example.com/level3.png";
+        // Set 1: ZK Rollups
+        string[] memory imageURIs1 = new string[](4);
+        imageURIs1[0] = "https://example.com/zk-rollups/no-score.png";
+        imageURIs1[1] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkInfraTalent1.svg";
+        imageURIs1[2] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkInfraTalent2.svg";
+        imageURIs1[3] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkInfraTalent3.svg";
 
-        // Set badge level names
-        string[] memory names = new string[](4);
-        names[0] = "No Score";
-        names[1] = "ZK Rollup Talent";
-        names[2] = "ZK Game Talent";
-        names[3] = "ZK Privacy Talent";
+        string[] memory names1 = new string[](4);
+        names1[0] = "No Score";
+        names1[1] = "ZK Rollup Talent";
+        names1[2] = "ZK Rollup Talent";
+        names1[3] = "ZK Rollup Talent";
 
-        // Set badge level descriptions
-        string[] memory descriptions = new string[](4);
-        descriptions[0] = "No contributions yet";
-        descriptions[1] =
-            "Contributors to zkrollups including Aztec, zksync, taiko, Scroll, Polygon zkEVM, Linea, Manta Pacific, Starknet";
-        descriptions[2] = "Contributors to zk games including 0xParc, Cartridge, etc";
-        descriptions[3] = "Contributors to privacy focused L1s including ZCash, Aleo, Mina, etc";
+        string[] memory descriptions1 = new string[](4);
+        descriptions1[0] = "No contributions yet";
+        descriptions1[1] = "Contributed to ZK rollups projects";
+        descriptions1[2] = "Contributed to ZK rollups projects";
+        descriptions1[3] = "Contributed to ZK rollups projects";
 
-        PassportDevZKBadge badge = new PassportDevZKBadge(resolver, easAddress);
+        // Set 2: ZK Games
+        string[] memory imageURIs2 = new string[](4);
+        imageURIs2[0] = "https://example.com/zk-rollups/no-score.png";
+        imageURIs2[1] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkPrivacyTalent1.svg";
+        imageURIs2[2] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkPrivacyTalent2.svg";
+        imageURIs2[3] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkPrivacyTalent3.svg";
 
-        badge.toggleAttester(gitcoinAttester, true);
-        badge.setEASAddress(easAddress);
-        badge.setLevelThresholds(levelThresholds);
-        badge.setBadgeLevelImageURIs(imageURIs);
-        badge.setBadgeLevelNames(names);
-        badge.setBadgeLevelDescriptions(descriptions);
+        string[] memory names2 = new string[](4);
+        names2[0] = "No Score";
+        names2[1] = "zk Infra Talent";
+        names2[2] = "zk Infra Talentr";
+        names2[3] = "zk Infra Talent";
+
+        string[] memory descriptions2 = new string[](4);
+        descriptions2[0] = "No contributions yet";
+        descriptions2[1] = "Contributed to ZK Infra projects";
+        descriptions2[2] = "Contributed to ZK Infra projects";
+        descriptions2[3] = "Contributed to ZK Infra projects";
+
+        // Set 3: ZK Privacy
+        string[] memory imageURIs3 = new string[](4);
+        imageURIs3[0] = "https://example.com/zk-rollups/no-score.png";
+        imageURIs3[1] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkRollupTalent1.svg";
+        imageURIs3[2] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkRollupTalent2.svg";
+        imageURIs3[3] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkRollupTalent3.svg";
+
+        string[] memory names3 = new string[](4);
+        names3[0] = "No Score";
+        names3[1] = "zk Privacy Talent";
+        names3[2] = "zk Privacy Talent";
+        names3[3] = "zk Privacy Talent";
+
+        string[] memory descriptions3 = new string[](4);
+        descriptions3[0] = "No contributions yet";
+        descriptions3[1] = "Contributed to ZK privacy projects";
+        descriptions3[2] = "Contributed to ZK privacy projects";
+        descriptions3[3] = "Contributed to ZK privacy projects";
+
+        // Deploy ZK Rollups Badge
+        PassportDevZKBadge badgeRollups = new PassportDevZKBadge(resolver, easAddress);
+        badgeRollups.toggleAttester(gitcoinAttester, true);
+        badgeRollups.setEASAddress(easAddress);
+        badgeRollups.setLevelThresholds(levelThresholds);
+        badgeRollups.setBadgeLevelImageURIs(imageURIs1);
+        badgeRollups.setBadgeLevelNames(names1);
+        badgeRollups.setBadgeLevelDescriptions(descriptions1);
+
+        // Deploy ZK Games Badge
+        PassportDevZKBadge badgeInfra = new PassportDevZKBadge(resolver, easAddress);
+        badgeInfra.toggleAttester(gitcoinAttester, true);
+        badgeInfra.setEASAddress(easAddress);
+        badgeInfra.setLevelThresholds(levelThresholds);
+        badgeInfra.setBadgeLevelImageURIs(imageURIs2);
+        badgeInfra.setBadgeLevelNames(names2);
+        badgeInfra.setBadgeLevelDescriptions(descriptions2);
+
+        // // // Deploy ZK Privacy Badge
+        PassportDevZKBadge badgePrivacy = new PassportDevZKBadge(resolver, easAddress);
+        badgePrivacy.toggleAttester(gitcoinAttester, true);
+        badgePrivacy.setEASAddress(easAddress);
+        badgePrivacy.setLevelThresholds(levelThresholds);
+        badgePrivacy.setBadgeLevelImageURIs(imageURIs3);
+        badgePrivacy.setBadgeLevelNames(names3);
+        badgePrivacy.setBadgeLevelDescriptions(descriptions3);
 
         vm.stopBroadcast();
 
-        console.log("PassportDevZKBadge deployed at:", address(badge));
+        console.log("PassportDevZKBadge (ZK Rollups) deployed at:", address(badgeRollups));
+        console.log("PassportDevZKBadge (ZK Infra) deployed at:", address(badgeGames));
+        console.log("PassportDevZKBadge (ZK Privacy) deployed at:", address(badgePrivacy));
     }
 }

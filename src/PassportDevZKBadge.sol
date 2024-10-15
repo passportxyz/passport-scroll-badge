@@ -70,7 +70,7 @@ contract PassportDevZKBadge is
     string[] public badgeLevelDescriptions;
 
     /// @notice Mapping of badge level to user address
-    /// @dev badge UID => current level
+    /// @dev badge address => current level
     mapping(address => uint256) public badgeLevel;
 
     /// @notice Mapping of used hashes, to prevent reusing the same passport hash
