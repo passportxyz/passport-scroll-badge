@@ -22,9 +22,9 @@ contract DeployPassportDevZKBadge is Script {
 
         // Set level thresholds (example values, adjust as needed)
         uint256[] memory levelThresholds = new uint256[](3);
-        levelThresholds[0] = 100;
-        levelThresholds[1] = 200;
-        levelThresholds[2] = 300;
+        levelThresholds[0] = 1;
+        levelThresholds[1] = 2;
+        levelThresholds[2] = 3;
 
         // Set 1: ZK Rollups
         
