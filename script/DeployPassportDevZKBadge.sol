@@ -7,7 +7,7 @@ import {PassportDevZKBadge} from "../src/PassportDevZKBadge.sol";
 contract DeployPassportDevZKBadge is Script {
     // Mainnet
     address constant resolver = 0x4560FECd62B14A463bE44D40fE5Cfd595eEc0113;
-    address constant gitcoinAttester = 0x39571bBD5a4c5d1a5184004c63F45FE426dB85Ea;
+    address constant gitcoinAttester = 0xCc90105D4A2aa067ee768120AdA19886021dF422;
     address constant easAddress = 0xC47300428b6AD2c7D03BB76D05A176058b47E6B0;
 
     // Sepolia
