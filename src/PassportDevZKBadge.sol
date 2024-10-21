@@ -13,6 +13,7 @@ import {ScrollBadgeAccessControl} from "@canvas/badge/extensions/ScrollBadgeAcce
 import {ScrollBadgeSingleton} from "@canvas/badge/extensions/ScrollBadgeSingleton.sol";
 import {IScrollBadgeUpgradeable} from "@canvas/badge/extensions/IScrollBadgeUpgradeable.sol";
 import {ScrollBadgeCustomPayload} from "@canvas/badge/extensions/ScrollBadgeCustomPayload.sol";
+import {ScrollBadgeDefaultURI} from "@canvas/badge/extensions/ScrollBadgeDefaultURI.sol";
 import {Unauthorized, CannotUpgrade} from "@canvas/Errors.sol";
 import {ScrollBadge} from "@canvas/badge/ScrollBadge.sol";
 import {SchemaResolver, ISchemaResolver} from "@eas/contracts/resolver/SchemaResolver.sol";
@@ -28,7 +29,8 @@ contract PassportDevZKBadge is
     ScrollBadgeAccessControl,
     ScrollBadgeCustomPayload,
     ScrollBadgeSingleton,
-    SchemaResolver
+    SchemaResolver,
+    ScrollBadgeDefaultURI
 {
     /// @notice The instance of the EAS contract
     IEAS public eas;
@@ -83,7 +85,7 @@ contract PassportDevZKBadge is
 
     /// @notice Initializes the PassportDevZKBadge contract
     /// @param resolver_ The address of the resolver contract
-    constructor(address resolver_, address eas_) ScrollBadge(resolver_) SchemaResolver(IEAS(eas_)) Ownable() {
+    constructor(address resolver_, address eas_, string memory _defaultBadgeURI) ScrollBadge(resolver_) SchemaResolver(IEAS(eas_)) ScrollBadgeDefaultURI(_defaultBadgeURI) Ownable() {
         upgradeSchema = _eas.getSchemaRegistry().register(
             "uint256 updatedScore, bytes32[] providerHashes",
             ISchemaResolver(address(this)), // resolver
@@ -176,11 +178,10 @@ contract PassportDevZKBadge is
         return super.onRevokeBadge(attestation);
     }
 
-    /// @inheritdoc ScrollBadge
-    /// @dev Generates the token URI for a given badge
-    /// @param uid The unique identifier of the badge
-    /// @return A string containing the token URI
-    function badgeTokenURI(bytes32 uid) public view override returns (string memory) {
+    /// @notice Returns the token URI corresponding to a certain badge UID.
+    /// @param uid The badge UID.
+    /// @return The badge token URI (same format as ERC721).
+    function getBadgeTokenURI(bytes32 uid) internal view override returns (string memory) {
         address recipient = getAttestation(uid).recipient;
         uint256 level = badgeLevel[recipient];
         string memory name = badgeLevelNames[level];
@@ -192,7 +193,7 @@ contract PassportDevZKBadge is
             abi.encodePacked('{"name":"', name, '", "description":"', description, '", "image": "', image, '"}')
         );
 
-        return string(abi.encodePacked("data:application/json;base64,", tokenUriJson));
+        return string(abi.encodePacked("data:application/json;base64,", tokenUriJson));   
     }
 
     /// @notice Return an attestation for a given UID

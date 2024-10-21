@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Script.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {PassportDevZKBadge} from "../src/PassportDevZKBadge.sol";
 
 contract DeployPassportDevZKBadge is Script {
@@ -42,14 +43,21 @@ contract DeployPassportDevZKBadge is Script {
         rollupDescriptions[3] = "Contributed to ZK rollups projects";
 
         string[] memory rollupImageUris = new string[](4);
-        rollupImageUris[0] = "";
+        rollupImageUris[0] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkRollupTalent1.svg";
         rollupImageUris[1] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkRollupTalent1.svg";
         rollupImageUris[2] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkRollupTalent2.svg";
         rollupImageUris[3] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkRollupTalent3.svg";
+
+
+        // Encode the JSON metadata
+        string memory defaultTokenJson = Base64.encode(
+            abi.encodePacked('{"name":"No Score", "description":"No contributions yet", "image": "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkRollupTalent1.svg"}')
+        );
+        string memory defaultTokenUri = string(abi.encodePacked("data:application/json;base64,", defaultTokenJson));
         
 
         // Deploy ZK Rollups Badge
-        PassportDevZKBadge badgeRollups = new PassportDevZKBadge(resolver, easAddress);
+        PassportDevZKBadge badgeRollups = new PassportDevZKBadge(resolver, easAddress, defaultTokenUri);
         badgeRollups.toggleAttester(gitcoinAttester, true);
         badgeRollups.setEASAddress(easAddress);
         badgeRollups.setLevelThresholds(levelThresholds);
@@ -60,7 +68,7 @@ contract DeployPassportDevZKBadge is Script {
         // Set 2: ZK Infra
 
         string[] memory infraImageUris = new string[](4);
-        infraImageUris[0] = "";
+        infraImageUris[0] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkInfraTalent1.svg";
         infraImageUris[1] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkInfraTalent1.svg";
         infraImageUris[2] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkInfraTalent2.svg";
         infraImageUris[3] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkInfraTalent3.svg";
@@ -78,7 +86,7 @@ contract DeployPassportDevZKBadge is Script {
         infraDescriptions[3] = "Contributed to ZK Infra projects";
 
         // Deploy ZK Infra Badge
-        PassportDevZKBadge badgeInfra = new PassportDevZKBadge(resolver, easAddress);
+        PassportDevZKBadge badgeInfra = new PassportDevZKBadge(resolver, easAddress, defaultTokenUri);
         badgeInfra.toggleAttester(gitcoinAttester, true);
         badgeInfra.setEASAddress(easAddress);
         badgeInfra.setLevelThresholds(levelThresholds);
@@ -88,7 +96,7 @@ contract DeployPassportDevZKBadge is Script {
 
         // Set 3: ZK Privacy
         string[] memory privacyImageUris = new string[](4);
-        privacyImageUris[0] = "";
+        privacyImageUris[0] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkPrivacyTalent1.svg";
         privacyImageUris[1] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkPrivacyTalent1.svg";
         privacyImageUris[2] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkPrivacyTalent2.svg";
         privacyImageUris[3] = "https://raw.githubusercontent.com/passportxyz/passport/10533495e270f7f0706e16d0d7c8ff0e68aa6c34/app/public/assets/zkPrivacyTalent3.svg";
@@ -106,7 +114,7 @@ contract DeployPassportDevZKBadge is Script {
         privacyDescriptions[3] = "Contributed to ZK privacy projects";
 
         // Deploy ZK Privacy Badge
-        PassportDevZKBadge badgePrivacy = new PassportDevZKBadge(resolver, easAddress);
+        PassportDevZKBadge badgePrivacy = new PassportDevZKBadge(resolver, easAddress, defaultTokenUri);
         badgePrivacy.toggleAttester(gitcoinAttester, true);
         badgePrivacy.setEASAddress(easAddress);
         badgePrivacy.setLevelThresholds(levelThresholds);
@@ -116,7 +124,7 @@ contract DeployPassportDevZKBadge is Script {
 
 
         // Deploy ZK Privacy Badge
-        PassportDevZKBadge passportTestBadge = new PassportDevZKBadge(resolver, easAddress);
+        PassportDevZKBadge passportTestBadge = new PassportDevZKBadge(resolver, easAddress, defaultTokenUri);
         passportTestBadge.toggleAttester(gitcoinAttester, true);
         passportTestBadge.setEASAddress(easAddress);
         passportTestBadge.setLevelThresholds(levelThresholds);
