@@ -36,11 +36,12 @@ contract TestPassportDevZKBadge is Test {
     address constant unauthorizedAddress = 0x1111111111111111111111111111111111111111;
 
     string constant defaultProviderHash = "GithubGuru";
+    string constant defaultBadgeUri = "defaultBadgeURI";
 
     bytes32 constant revocationSchema = 0xba4934720e4c7fc2978acd7c8b4e9cb72288e72f835bd19b2eb4cac99d79d220;
 
     function setUp() public {
-        zkBadge = new PassportDevZKBadge(resolver, easAddress);
+        zkBadge = new PassportDevZKBadge(resolver, easAddress, defaultBadgeUri);
 
         upgradeSchema = zkBadge.upgradeSchema();
 
@@ -312,21 +313,6 @@ contract TestPassportDevZKBadge is Test {
         zkBadge.setBadgeLevelImageURIs(newURIs);
     }
 
-    function test_tokenURILevel0() public {
-        // string memory uri = zkBadge.badgeTokenURI(address(0));
-
-        // Uncomment and update the following assertion once the exact URI format is confirmed
-        // assertEq(
-        //     uri,
-        //     string.concat(
-        //         "data:application/json;base64,",
-        //         string(Base64.encode(
-        //             '{"name":"Passport ZK Badge", "description":"Default description", "image": "URIdefault"}'
-        //         ))
-        //     )
-        // );
-    }
-
     function test_successful_revocation() public {
         // Issue a badge
         uint256 currentLevel = 1;
@@ -398,5 +384,13 @@ contract TestPassportDevZKBadge is Test {
 
         // Verify that the badge level remains unchanged
         assertEq(zkBadge.badgeLevel(user), 1);
+    }
+
+    function test_default_token_uri() public {
+        string memory defaultBadgeUriFromContract = zkBadge.defaultBadgeURI();
+        assertEq(defaultBadgeUriFromContract, defaultBadgeUri);
+
+        string memory zeroBadgeUri = zkBadge.badgeTokenURI(bytes32(0));
+        assertEq(zeroBadgeUri, defaultBadgeUri);
     }
 }
